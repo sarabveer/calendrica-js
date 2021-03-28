@@ -1,0 +1,18 @@
+{
+  "name": "calendrica",
+  "version": "1.0.0",
+  "description": "Javascript Implementation of Calendrical Calculations.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sarabveer/calendrica-js.git"
+  },
+  "author": "Sarabveer Singh <me@sarabveer.me>",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/Sarabveer/calendrica-js/issues"
+  },
+  "homepage": "https://github.com/Sarabveer/calendrica-js#readme",
+  "dependencies": {},
+  "devDependencies": {}
+}
