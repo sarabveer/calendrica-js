@@ -189,14 +189,36 @@ const midnight = ( date, location ) => universalFromApparent( date, location )
 // Universal time on fixed date of midday at location.
 const midday = ( date, location ) => universalFromApparent( date + hr( 12 ), location )
 
+// Mean sidereal time of day from moment 'tee' expressed
+// as hour angle.  Adapted from "Astronomical Algorithms"
+// by Jean Meeus, Willmann-Bell, Inc., 2nd edn., 1998, p. 88.
+const siderealFromMoment = tee => {
+  const c = ( tee - J2000 ) / 36525
+  return mod( poly( c, [
+    280.46061837,
+    ( 36525 * 360.98564736629 ),
+    0.000387933,
+    ( -1 / 38710000 ),
+  ] ), 360 )
+}
+
 // Return declination at moment UT tee of object at longitude 'lam' and latitude 'beta'.
 const declination = ( tee, beta, lambda ) => {
   const varepsilon = obliquity( tee )
-  return arcsinDegrees( sinDegrees( beta )
-    * cosDegrees( varepsilon )
-    + cosDegrees( beta )
-    * sinDegrees( varepsilon )
-    * sinDegrees( lambda ) )
+  return arcsinDegrees(
+    sinDegrees( beta ) * cosDegrees( varepsilon )
+    + cosDegrees( beta ) * sinDegrees( varepsilon )
+    * sinDegrees( lambda ),
+  )
+}
+
+// Right ascension at moment UT 'tee' of object at latitude 'beta' and longitude 'lambda'.
+const rightAscension = ( tee, beta, lambda ) => {
+  const varepsilon = obliquity( tee )
+  return arctanDegrees(
+    sinDegrees( lambda ) * cosDegrees( varepsilon ) - tanDegrees( beta ) * sinDegrees( varepsilon ),
+    cosDegrees( lambda ),
+  )
 }
 
 // Longitudinal nutation at moment tee.
@@ -525,6 +547,15 @@ const lunarPhase = tee => {
   return Math.abs( phi - phiPrime ) > 180 ? phiPrime : phi
 }
 
+// Moment UT of the last time at or before tee
+// when the lunar-phase is phi degrees.
+const lunarPhaseAtOrBefore = ( phi, tee ) => {
+  const tau = tee - MEAN_SYNODIC_MONTH * ( 1 / 360 ) * mod( lunarPhase( tee ) - phi, 360 )
+  const a = tau - 2
+  const b = Math.min( tee, tau + 2 )
+  return invertAngular( lunarPhase, phi, a, b )
+}
+
 // Moment UT of the next time at or after tee
 // when the lunar-phase is phi degrees.
 const lunarPhaseAtOrAfter = ( phi, tee ) => {
@@ -532,6 +563,83 @@ const lunarPhaseAtOrAfter = ( phi, tee ) => {
   const a = Math.max( tee, tau - 2 )
   const b = tau + 2
   return invertAngular( lunarPhase, phi, a, b )
+}
+
+// Latitude of moon (in degrees) at moment tee.
+// Adapted from "Astronomical Algorithms" by Jean Meeus,
+// Willmann-Bell, 2nd edn., 1998, pp. 338-342.
+const lunarLatitude = tee => {
+  const c = julianCenturies( tee )
+  const LPrime = meanLunarLongitude( c )
+  const D = lunarElongation( c )
+  const M = solarAnomaly( c )
+  const MPrime = lunarAnomaly( c )
+  const F = moonNode( c )
+  const E = poly( c, [ 1, -0.002516, -0.0000074 ] )
+  const argsSineCoeff = [
+    5128122, 280602, 277693, 173237, 55413, 46271, 32573,
+    17198, 9266, 8822, 8216, 4324, 4200, -3359, 2463, 2211,
+    2065, -1870, 1828, -1794, -1749, -1565, -1491, -1475,
+    -1410, -1344, -1335, 1107, 1021, 833, 777, 671, 607,
+    596, 491, -451, 439, 422, 421, -366, -351, 331, 315,
+    302, -283, -229, 223, 223, -220, -220, -185, 181,
+    -177, 176, 166, -164, 132, -119, 115, 107,
+  ]
+  const argsLunarElongation = [
+    0, 0, 0, 2, 2, 2, 2, 0, 2, 0, 2, 2, 2, 2, 2, 2, 2, 0, 4, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 4, 4, 0, 4, 2, 2, 2, 2, 0, 2, 2, 2, 2, 4, 2, 2,
+    0, 2, 1, 1, 0, 2, 1, 2, 0, 4, 4, 1, 4, 1, 4, 2,
+  ]
+  const argsSolarAnomaly = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, -1, -1, -1, 1, 0, 1,
+    0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 1,
+    0, -1, -2, 0, 1, 1, 1, 1, 1, 0, -1, 1, 0, -1, 0, 0, 0, -1, -2,
+  ]
+  const argsLunarAnomaly = [
+    0, 1, 1, 0, -1, -1, 0, 2, 1, 2, 0, -2, 1, 0, -1, 0, -1, -1, -1,
+    0, 0, -1, 0, 1, 1, 0, 0, 3, 0, -1, 1, -2, 0, 2, 1, -2, 3, 2, -3,
+    -1, 0, 0, 1, 0, 1, 1, 0, 0, -2, -1, 1, -2, 2, -2, -1, 1, 1, -1,
+    0, 0,
+  ]
+  const argsMoonNode = [
+    1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, -1, 1, -1, 1, 1, -1, -1,
+    -1, 1, 3, 1, 1, 1, -1, -1, -1, 1, -1, 1, -3, 1, -3, -1, -1, 1,
+    -1, 1, -1, 1, 1, 1, 1, -1, 3, -1, -1, 1, -1, -1, 1, -1, 1, -1,
+    -1, -1, -1, -1, -1, 1,
+  ]
+  const beta = ( 1 / 1000000 )
+    * sigma( [
+      argsSineCoeff, argsLunarElongation, argsSolarAnomaly, argsLunarAnomaly, argsMoonNode,
+    ], (
+      [ v, w, x, y, z ],
+    ) => ( v * ( E ** Math.abs( x ) ) * sinDegrees( w * D + x * M + y * MPrime + z * F ) ) )
+  const venus = ( 175 / 1000000 ) * (
+    sinDegrees( 119.75 + c * 131.849 + F ) + sinDegrees( 119.75 + c * 131.849 - F )
+  )
+  const flatEarth = ( -2235 / 1000000 ) * sinDegrees( LPrime )
+    + ( 127 / 1000000 ) * sinDegrees( LPrime - MPrime )
+    - ( 115 / 1000000 ) * sinDegrees( LPrime + MPrime )
+  const extra = ( 382 / 1000000 ) * sinDegrees( 313.45 + c * 481266.484 )
+  return beta + venus + flatEarth + extra
+}
+
+// Geocentric altitude of moon at tee at location,
+// as a small positive/negative angle in degrees, ignoring
+// parallax and refraction.  Adapted from "Astronomical
+// Algorithms" by Jean Meeus, Willmann-Bell, 2nd edn., 1998.
+const lunarAltitude = ( tee, location ) => {
+  const lambda = lunarLongitude( tee )
+  const beta = lunarLatitude( tee )
+  const alpha = rightAscension( tee, beta, lambda )
+  const delta = declination( tee, beta, lambda )
+  const theta0 = siderealFromMoment( tee )
+  const H = mod( ( theta0 + location.longitude - alpha ), 360 )
+  const altitude = arcsinDegrees(
+    sinDegrees( location.latitude ) * sinDegrees( delta )
+    + cosDegrees( location.latitude ) * cosDegrees( delta )
+    * cosDegrees( H ),
+  )
+  return mod3( altitude, -180, 180 )
 }
 
 // Moment UT of last new moon before tee.
@@ -621,6 +729,53 @@ const sunset = ( date, location ) => {
   return dusk( date, location, alpha )
 }
 
+// Angular separation of sun and moon at moment tee.
+const arcOfLight = tee => (
+  arccosDegrees( cosDegrees( lunarLatitude( tee ) ) * cosDegrees( lunarPhase( tee ) ) )
+)
+
+// Best viewing time (UT) in the evening.
+// Simple version.
+const simpleBestView = ( date, location ) => {
+  const dark = dusk( date, location, 4.5 )
+  const best = dark === null ? date + 1 : dark
+  return universalFromStandard( best, location )
+}
+
+// S. K. Shaukat's criterion for likely
+// visibility of crescent moon on eve of date at location.
+// Not intended for high altitudes or polar regions.
+const shaukatCriterion = ( date, location ) => {
+  const tee = simpleBestView( date - 1, location )
+  const phase = lunarPhase( tee )
+  const h = lunarAltitude( tee, location )
+  const ARCL = arcOfLight( tee )
+  return ( phase > 0 && phase < 90 ) && ( ARCL >= 10.6 && ARCL <= 90 ) && ( h > 4.1 )
+}
+
+// Criterion for possible visibility of crescent moon
+// on eve of date at location.
+// Shaukat's criterion may be replaced with another.
+const visibleCrescent = ( date, location ) => shaukatCriterion( date, location )
+
+// Closest fixed date on or before 'date' when crescent
+// moon first became visible at 'location'.
+const phasisOnOrBefore = ( date, location ) => {
+  const moon = Math.floor( lunarPhaseAtOrBefore( 0, date ) )
+  const age = date - moon
+  const tau = ( age <= 3 && !visibleCrescent( date, location ) ) ? moon - 30 : moon
+  return next( tau, d => visibleCrescent( d, location ) )
+}
+
+// Closest fixed date on or after 'date' on the eve
+// of which crescent moon first became visible at 'location'.
+const phasisOnOrAfter = ( date, location ) => {
+  const moon = Math.floor( lunarPhaseAtOrBefore( 0, date ) )
+  const age = date - moon
+  const tau = ( age >= 4 && visibleCrescent( date - 1, location ) ) ? moon + 29 : date
+  return next( tau, d => visibleCrescent( d, location ) )
+}
+
 module.exports = {
   zoneFromLongitude,
   universalFromLocal,
@@ -640,7 +795,9 @@ module.exports = {
   universalFromApparent,
   midnight,
   midday,
+  siderealFromMoment,
   declination,
+  rightAscension,
   nutation,
   aberration,
   solarLongitude,
@@ -659,7 +816,10 @@ module.exports = {
   lunarLongitude,
   nthNewMoon,
   lunarPhase,
+  lunarPhaseAtOrBefore,
   lunarPhaseAtOrAfter,
+  lunarLatitude,
+  lunarAltitude,
   newMoonBefore,
   newMoonAtOrAfter,
   sineOffset,
@@ -670,4 +830,10 @@ module.exports = {
   refraction,
   sunrise,
   sunset,
+  arcOfLight,
+  simpleBestView,
+  shaukatCriterion,
+  visibleCrescent,
+  phasisOnOrBefore,
+  phasisOnOrAfter,
 }
