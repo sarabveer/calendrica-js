@@ -1,8 +1,8 @@
-const astronomy = require( './astronomy' )
-const general = require( './general' )
-const gregorian = require( './gregorian' )
-const julian = require( './julian' )
-const modernHindu = require( './modernHindu' )
+const astronomy = require( './src/astronomy' )
+const general = require( './src/general' )
+const gregorian = require( './src/gregorian' )
+const julian = require( './src/julian' )
+const modernHindu = require( './src/modernHindu' )
 
 module.exports = {
   astronomy,
