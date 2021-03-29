@@ -1,5 +1,7 @@
-const { observationalIslamic: { observationalIslamicFromFixed } } = require( '../index' )
+const { ObservationalIslamic } = require( '../index' )
 const rd = require( './rd' )
+
+const islamic = new ObservationalIslamic()
 
 const results = [
   { year: -1245, month: 12, day: 11 },
@@ -41,6 +43,6 @@ const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 
 describe( 'observationalIslamicFromFixed()', () => {
   data.map( ( [ rd, result ] ) => it( `Output of observationalIslamicFromFixed(${rd}) should be: '${result}'`, () => {
-    expect( observationalIslamicFromFixed( rd ) ).toEqual( result )
+    expect( islamic.observationalIslamicFromFixed( rd ) ).toEqual( result )
   } ) )
 } )

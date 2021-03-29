@@ -3,7 +3,7 @@ const general = require( './src/general' )
 const gregorian = require( './src/gregorian' )
 const julian = require( './src/julian' )
 const modernHindu = require( './src/modernHindu' )
-const observationalIslamic = require( './src/observationalIslamic' )
+const ObservationalIslamic = require( './src/observationalIslamic' )
 
 module.exports = {
   astronomy,
@@ -11,5 +11,5 @@ module.exports = {
   gregorian,
   julian,
   modernHindu,
-  observationalIslamic,
+  ObservationalIslamic,
 }

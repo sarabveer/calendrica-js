@@ -21,7 +21,7 @@ The file `general.js` includes functions needed for mathematical computations gi
 
 ### Tests
 
-The dataset used in the tests is taken from "Appendix C - Sample Data" of the *Calendrical Calculations: The Ultimate Edition* book. These tests are meant to show correct implementation of the functions from the book, they not necessarily represent historical reality.
+The dataset used in the tests is taken from "Appendix C - Sample Data" of the *Calendrical Calculations: The Ultimate Edition* book. These tests are meant to show correct implementation of the functions from the book, they do not necessarily represent historical reality.
 
 ## Resources
 
