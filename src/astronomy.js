@@ -52,7 +52,9 @@ const localFromStandard = ( teeRomS, location ) => (
 // for years 1600-1986 and from polynomials on the NASA Eclipse web site for other years.
 const ephemerisCorrection = tee => {
   const year = gregorianYearFromFixed( Math.floor( tee ) )
-  const c = ( 1 / 36525 ) * gregorianDateDifference( [ 1900, 1, 1 ], [ year, 7, 1 ] )
+  const c = ( 1 / 36525 ) * gregorianDateDifference(
+    { year: 1900, month: 1, day: 1 }, { year, month: 7, day: 1 },
+  )
   const y2000 = year - 2000
   const y1700 = year - 1700
   const y1600 = year - 1600
