@@ -5,15 +5,14 @@ const { fixedFromJulian } = require( './julian' )
 // Fixed date of start of the Islamic calendar.
 const ISLAMIC_EPOCH = fixedFromJulian( 622, 7, 16 )
 
-// Length of lunar month based on observability at 'location',
-// which includes 'date'.
+// Length of lunar month based on observability at location, which includes date.
 const monthLength = ( date, location ) => {
   const moon = phasisOnOrAfter( date + 1, location )
   const prev = phasisOnOrBefore( date, location )
   return moon - prev
 }
 
-// Fixed 'date' in 'location' is in a month that was forced to start early.
+// Fixed date in location is in a month that was forced to start early.
 const isEarlyMonth = ( date, location ) => {
   const start = phasisOnOrBefore( date, location )
   const prev = start - 15
@@ -47,14 +46,14 @@ const ObservationalIslamic = class {
     }
   }
 
-  // Fixed date equivalent to Observational Islamic date 'i-date'.
+  // Fixed date equivalent to Observational Islamic date i-date.
   fixedFromObservationalIslamic( year, month, day ) {
     const midmonth = ISLAMIC_EPOCH
       + Math.floor( ( ( year - 1 ) * 12 + month - ( 1 / 2 ) ) * MEAN_SYNODIC_MONTH )
     return phasisOnOrBefore( midmonth, this.ISLAMIC_LOCATION ) + day - 1
   }
 
-  // Observational Islamic date (year month day) corresponding to fixed 'date'.
+  // Observational Islamic date (year month day) corresponding to fixed date.
   observationalIslamicFromFixed( date ) {
     const crescent = phasisOnOrBefore( date, this.ISLAMIC_LOCATION )
     const elapsedMonths = Math.round( ( crescent - ISLAMIC_EPOCH ) / MEAN_SYNODIC_MONTH )
@@ -64,7 +63,7 @@ const ObservationalIslamic = class {
     return { year, month, day }
   }
 
-  // Fixed date equivalent to Observational Islamic 'i-date'.
+  // Fixed date equivalent to Observational Islamic i-date.
   // Months are never longer than 30 days.
   altFixedFromObservationalIslamic( year, month, day ) {
     const midmonth = ISLAMIC_EPOCH
@@ -74,7 +73,7 @@ const ObservationalIslamic = class {
     return isEarlyMonth( midmonth, this.ISLAMIC_LOCATION ) ? date - 1 : date
   }
 
-  // Observational Islamic date (year month day) corresponding to fixed 'date'.
+  // Observational Islamic date (year month day) corresponding to fixed date.
   // Months are never longer than 30 days.
   altObservationalIslamicFromFixed( date ) {
     const early = isEarlyMonth( date, this.ISLAMIC_LOCATION )

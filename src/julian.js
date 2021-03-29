@@ -4,10 +4,10 @@ const { JANUARY, MARCH, DECEMBER, fixedFromGregorian } = require( './gregorian' 
 // Fixed date of start of the Julian calendar.
 const JULIAN_EPOCH = fixedFromGregorian( 0, DECEMBER, 30 )
 
-// True if 'j-year' is a leap year on the Julian calendar.
+// True if j-year is a leap year on the Julian calendar.
 const isJulianLeapYear = jYear => mod( jYear, 4 ) === ( jYear > 0 ? 0 : 3 )
 
-// Fixed date equivalent to the Julian date 'j-date'.
+// Fixed date equivalent to the Julian date j-date.
 const fixedFromJulian = ( year, month, day ) => {
   const y = year < 0 ? year + 1 : year
   return JULIAN_EPOCH - 1
@@ -18,7 +18,7 @@ const fixedFromJulian = ( year, month, day ) => {
     + day
 }
 
-// Julian (year month day) corresponding to fixed 'date'.
+// Julian (year month day) corresponding to fixed date.
 const julianFromFixed = date => {
   const approx = Math.floor( ( 1 / 1461 ) * ( 4 * ( date - JULIAN_EPOCH ) + 1464 ) )
   const year = approx <= 0 ? approx - 1 : approx

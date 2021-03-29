@@ -37,9 +37,6 @@ const results = [
   { year: 2016, month: 4, day: 2 },
 ]
 
-// Change year from Saka to Bikrami
-results.forEach( ( { year }, i ) => { results[ i ].year = year + 135 } )
-
 const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 
 describe( 'hinduSolarFromFixed()', () => {

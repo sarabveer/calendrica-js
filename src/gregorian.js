@@ -39,7 +39,7 @@ const NOVEMBER = 11
 // December on Julian/Gregorian calendar.
 const DECEMBER = 12
 
-// True if 'g-year' is a leap year on the Gregorian calendar.
+// True if g-year is a leap year on the Gregorian calendar.
 const isGregorianLeapYear = gYear => (
   ( mod( gYear, 4 ) === 0 ) && !( [ 100, 200, 300 ].includes( mod( gYear, 400 ) ) )
 )
@@ -55,10 +55,10 @@ const fixedFromGregorian = ( year, month, day ) => (
     + day
 )
 
-// Fixed date of January 1 in 'g-year'.
+// Fixed date of January 1 in g-year.
 const gregorianNewYear = gYear => fixedFromGregorian( gYear, JANUARY, 1 )
 
-// Gregorian year corresponding to the fixed 'date'.
+// Gregorian year corresponding to the fixed date.
 const gregorianYearFromFixed = date => {
   const d0 = date - GREGORIAN_EPOCH
   const n400 = Math.floor( d0 / 146097 )
@@ -72,7 +72,7 @@ const gregorianYearFromFixed = date => {
   return ( n100 === 4 || n1 === 4 ) ? year : year + 1
 }
 
-// Gregorian (year month day) corresponding to fixed 'date'.
+// Gregorian (year month day) corresponding to fixed date.
 const gregorianFromFixed = date => {
   const year = gregorianYearFromFixed( date )
   const priorDays = date - gregorianNewYear( year )
@@ -84,7 +84,7 @@ const gregorianFromFixed = date => {
   return { year, month, day }
 }
 
-// Number of days from Gregorian date 'g-date1' until 'g-date2'.
+// Number of days from Gregorian date g-date1 until g-date2.
 const gregorianDateDifference = (
   { year: year1, month: month1, day: day1 }, // g-date1
   { year: year2, month: month2, day: day2 }, // g-date2
