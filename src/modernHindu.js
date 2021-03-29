@@ -284,7 +284,7 @@ const fixedFromHinduLunar = ( year, month, leapMonth = false, day, leapDay = fal
   const mid = hinduLunarFromFixed( s - 15 )
   const k = hinduLunarDayFromMoment( s + hr( 6 ) )
   let est = s + day
-  if ( 3 < k && k < 27 ) {
+  if ( k > 3 && k < 27 ) {
     est -= k
   } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
     est -= mod3( k, -15, 15 )
@@ -391,7 +391,7 @@ const fixedFromAstroHinduLunar = ( year, month, leapMonth = false, day, leapDay 
   const k = astroLunarDayFromMoment( s + hr( 6 ) )
   const mid = astroHinduLunarFromFixed( s - 15 )
   let est = s + day
-  if ( 3 < k && k < 27 ) {
+  if ( k > 3 && k < 27 ) {
     est -= k
   } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
     est -= mod3( k, -15, 15 )

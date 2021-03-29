@@ -1,13 +1,17 @@
-const { mod } = require( './general' )
+const { mod, hr } = require( './general' )
 const { MEAN_SYNODIC_MONTH, phasisOnOrBefore, phasisOnOrAfter } = require( './astronomy' )
 const { fixedFromJulian } = require( './julian' )
-const { AMRITSAR } = require( './modernHindu' )
 
 // Fixed date of start of the Islamic calendar.
 const ISLAMIC_EPOCH = fixedFromJulian( 622, 7, 16 )
 
 // Sample location for Observational Islamic calendar
-const ISLAMIC_LOCATION = AMRITSAR
+const ISLAMIC_LOCATION = {
+  latitude: 30.1,
+  longitude: 31.3,
+  elevation: 200,
+  zone: hr( 2 ),
+}
 
 // Fixed date equivalent to Observational Islamic date 'i-date'.
 const fixedFromObservationalIslamic = ( year, month, day ) => {

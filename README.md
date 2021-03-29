@@ -19,6 +19,10 @@ The file `general.js` includes functions needed for mathematical computations gi
 
 ¹ For these functions, the reference location used is Amritsar, Punjab.
 
+### Tests
+
+The dataset used in the tests is taken from "Appendix C - Sample Data" of the *Calendrical Calculations: The Ultimate Edition* book. These tests are meant to show correct implementation of the functions from the book, they not necessarily represent historical reality.
+
 ## Resources
 
 [Calendrical Calculations site](https://www.cs.tau.ac.il/~nachum/calendar-book/index.shtml)
