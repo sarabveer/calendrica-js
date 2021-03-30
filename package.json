@@ -1,12 +1,13 @@
 {
   "name": "calendrica",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Javascript Implementation of Calendrical Calculations.",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
     "test": "jest --coverage",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "release": "release-it"
   },
   "repository": {
     "type": "git",
@@ -28,7 +29,18 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jest": "^24.3.2",
     "eslint-plugin-simple-import-sort": "^7.0.0",
+    "husky": "^6.0.0",
     "jest": "^26.6.3",
-    "husky": "^6.0.0"
+    "release-it": "^14.5.0"
+  },
+  "keywords": [
+    "calendar",
+    "calendars",
+    "calendrical-calculations",
+    "astronomical-algorithms"
+  ],
+  "directories": {
+    "lib": "src",
+    "test": "test"
   }
 }
