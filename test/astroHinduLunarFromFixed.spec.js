@@ -1,5 +1,7 @@
-const { modernHindu: { astroHinduLunarFromFixed } } = require( '../index' )
+const { ModernHindu } = require( '../index' )
 const rd = require( './rd' )
+
+const hindu = new ModernHindu()
 
 const results = [
   { year: -529, month: 6, leapMonth: true, day: 11, leapDay: false },
@@ -42,6 +44,6 @@ const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 // Skip due to Location and Sunrise calc differences
 describe.skip( 'astroHinduLunarFromFixed', () => {
   data.map( ( [ rd, result ] ) => it( `Output of astroHinduLunarFromFixed(${rd}) should be: '${result}'`, () => {
-    expect( astroHinduLunarFromFixed( rd ) ).toEqual( result )
+    expect( hindu.astroHinduLunarFromFixed( rd ) ).toEqual( result )
   } ) )
 } )

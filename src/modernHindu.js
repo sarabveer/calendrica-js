@@ -35,12 +35,6 @@ const HINDU_ANOMALISTIC_YEAR = 1577917828000 / ( 4320000000 - 387 )
 // Time from apogee to apogee, with bija correction.
 const HINDU_ANOMALISTIC_MONTH = 1577917828 / ( 57753336 - 488199 )
 
-// Years from Kali Yuga until Saka era.
-const HINDU_SOLAR_ERA = 3179
-
-// Years from Kali Yuga until Vikrama era.
-const HINDU_LUNAR_ERA = 3044
-
 // Location of Ujjain.
 const UJJAIN = {
   latitude: angle( 23, 9, 0 ),
@@ -48,9 +42,6 @@ const UJJAIN = {
   elevation: 0,
   zone: hr( 5 + 461 / 9000 ),
 }
-
-// Location (Ujjain) for determining Hindu calendar.
-const HINDU_LOCATION = UJJAIN
 
 // Elapsed days (Ahargana) to date since Hindu epoch (KY).
 const hinduDayCount = date => date - HINDU_EPOCH
@@ -198,129 +189,8 @@ const hinduEquationOfTime = date => {
     * HINDU_SIDEREAL_YEAR
 }
 
-// Sunrise at hindu-location on date.
-const hinduSunrise = date => (
-  date + hr( 6 )
-    + ( ( UJJAIN.longitude - HINDU_LOCATION.longitude ) / 360 )
-    - hinduEquationOfTime( date )
-    + ( 1577917828 / ( 1582237828 * 360 ) )
-    * ( hinduAscensionalDifference( date, HINDU_LOCATION )
-      + ( 1 / 4 ) * hinduSolarSiderealDifference( date )
-    )
-)
-
-// Sunset at hindu-location on date.
-const hinduSunset = date => (
-  date + hr( 18 )
-    + ( ( UJJAIN.longitude - HINDU_LOCATION.longitude ) / 360 )
-    - hinduEquationOfTime( date )
-    + ( 1577917828 / ( 1582237828 * 360 ) )
-    * ( -hinduAscensionalDifference( date, HINDU_LOCATION )
-      + ( 3 / 4 ) * hinduSolarSiderealDifference( date )
-    )
-)
-
-// Return the astronomical sunrise at Hindu location on date, date,
-// per Lahiri, rounded to nearest minute, as a rational number.
-const astroHinduSunrise = date => {
-  const rise = dawn( date, HINDU_LOCATION, angle( 0, 47, 0 ) )
-  return ( ( 1 / 60 ) / 24 ) * Math.round( rise * 24 * 60 )
-}
-
-// Hindu (Orissa) solar date equivalent to fixed date.
-const hinduSolarFromFixed = date => {
-  const critical = localFromStandard( astroHinduSunrise( date + 1 ), HINDU_LOCATION )
-  const month = hinduZodiac( critical )
-  const year = hinduCalendarYear( critical ) - HINDU_SOLAR_ERA
-  const approx = date - 3 - mod( Math.floor( hinduSolarLongitude( critical ) ), 30 )
-  const start = next( approx, ( i => (
-    hinduZodiac( localFromStandard( astroHinduSunrise( i + 1 ), HINDU_LOCATION ) ) === month
-  ) ) )
-  const day = date - start + 1
-  return { year, month, day }
-}
-
-// Fixed date corresponding to Hindu solar date s-date
-const fixedFromHinduSolar = ( year, month, day ) => {
-  const start = Math.floor(
-    ( year + HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * HINDU_SIDEREAL_YEAR,
-  ) + HINDU_EPOCH
-  return day - 1 + next( start - 3, d => (
-    hinduZodiac( localFromStandard( astroHinduSunrise( d + 1 ), HINDU_LOCATION ) ) === month
-  ) )
-}
-
-// Hindu lunar date, new-moon scheme, equivalent to fixed date.
-const hinduLunarFromFixed = date => {
-  const critical = localFromStandard( astroHinduSunrise( date ), HINDU_LOCATION )
-  const day = hinduLunarDayFromMoment( critical )
-  const leapDay = day === hinduLunarDayFromMoment(
-    localFromStandard( astroHinduSunrise( date - 1 ), HINDU_LOCATION ),
-  )
-  const lastNewMoon = hinduNewMoonBefore( critical )
-  const nextNewMoon = hinduNewMoonBefore( Math.floor( lastNewMoon ) + 35 )
-  const solarMonth = hinduZodiac( lastNewMoon )
-  const leapMonth = solarMonth === hinduZodiac( nextNewMoon )
-  const month = amod( solarMonth + 1, 12 )
-  const year = hinduCalendarYear( month <= 2 ? date + 180 : date ) - HINDU_LUNAR_ERA
-  return { year, month, leapMonth, day, leapDay }
-}
-
-// Fixed date corresponding to Hindu lunar date.
-const fixedFromHinduLunar = ( year, month, leapMonth = false, day, leapDay = false ) => {
-  const approx = HINDU_EPOCH + HINDU_SIDEREAL_YEAR
-    * ( year + HINDU_LUNAR_ERA + ( ( month - 1 ) / 12 ) )
-  const s = Math.floor( approx - HINDU_SIDEREAL_YEAR
-    * mod3( ( hinduSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ), -1 / 2, 1 / 2 ) )
-  const k = hinduLunarDayFromMoment( s + hr( 6 ) )
-  const mid = hinduLunarFromFixed( s - 15 )
-  let est = s + day
-  if ( k > 3 && k < 27 ) {
-    est -= k
-  } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
-    est -= mod3( k, -15, 15 )
-  } else {
-    est -= mod3( k, 15, 45 )
-  }
-  const tau = est - mod3( hinduLunarDayFromMoment( est + hr( 6 ) ) - day, -15, 15 )
-  const date = next( tau - 1, ( d => (
-    [ day, amod( day + 1, 30 ) ].includes(
-      hinduLunarDayFromMoment( localFromStandard( astroHinduSunrise( d ), HINDU_LOCATION ) ),
-    )
-  ) ) )
-  return leapDay ? date + 1 : date
-}
-
-// Hindu lunar date, full-moon scheme, equivalent to fixed date.
-const hinduFullmoonFromFixed = date => {
-  const { year, month, leapMonth, day, leapDay } = hinduLunarFromFixed( date )
-  const m = day >= 16 ? hinduLunarFromFixed( date + 20 ).month : month
-  return { year, month: m, leapMonth, day, leapDay }
-}
-
-// True if Hindu lunar month month in year is expunged.
-const isHinduExpunged = ( year, month ) => (
-  month !== hinduLunarFromFixed( fixedFromHinduLunar( year, month, false, 15, false ) ).month
-)
-
-// Fixed date equivalent to Hindu lunar date in full-moon scheme.
-const fixedFromHinduFullmoon = ( year, month, leapMonth = false, day, leapDay = false ) => {
-  let m
-  if ( leapMonth || day <= 15 ) {
-    m = month
-  } else if ( isHinduExpunged( year, amod( month - 1, 12 ) ) ) {
-    m = amod( month - 2, 12 )
-  } else {
-    m = amod( month - 1, 12 )
-  }
-  return fixedFromHinduLunar( year, m, leapMonth, day, leapDay )
-}
-
 // Difference between tropical and sidereal solar longitude.
 const ayanamsha = tee => mod3( solarLongitude( tee ) - siderealSolarLongitude( tee ), -180, 180 )
-
-// Geometrical sunset at Hindu location on date.
-const astroHinduSunset = date => dusk( date, HINDU_LOCATION, angle( 0, 47, 0 ) )
 
 // Sidereal zodiacal sign of the sun, as integer in range 1..12, at moment tee.
 const siderealZodiac = tee => Math.floor( siderealSolarLongitude( tee ) / 30 ) + 1
@@ -332,72 +202,8 @@ const astroHinduCalendarYear = tee => (
   )
 )
 
-// Astronomical Hindu solar date equivalent to fixed date.
-const astroHinduSolarFromFixed = date => {
-  const critical = universalFromStandard( astroHinduSunrise( date + 1 ), HINDU_LOCATION )
-  const month = siderealZodiac( critical )
-  const year = astroHinduCalendarYear( critical ) - HINDU_SOLAR_ERA
-  const approx = date - 3 - mod( Math.floor( siderealSolarLongitude( critical ) ), 30 )
-  const start = next( approx, ( i => (
-    siderealZodiac( universalFromStandard( astroHinduSunrise( i + 1 ), HINDU_LOCATION ) ) === month
-  ) ) )
-  const day = date - start + 1
-  return { year, month, day }
-}
-
-// Fixed date corresponding to Astronomical Hindu solar date
-const fixedFromAstroHinduSolar = ( year, month, day ) => {
-  const approx = HINDU_EPOCH - 3
-    + Math.floor( ( year + HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * MEAN_SIDEREAL_YEAR )
-  const start = next( approx, ( i => (
-    siderealZodiac( universalFromStandard( astroHinduSunrise( i + 1 ), HINDU_LOCATION ) ) === month
-  ) ) )
-  return start + day - 1
-}
-
 // Phase of moon (tithi) at moment tee, as an integer in the range 1..30.
 const astroLunarDayFromMoment = tee => Math.floor( lunarPhase( tee ) / 12 ) + 1
-
-// Astronomical Hindu lunar date equivalent to fixed date.
-const astroHinduLunarFromFixed = date => {
-  const critical = universalFromStandard( astroHinduSunrise( date ), HINDU_LOCATION )
-  const day = astroLunarDayFromMoment( critical )
-  const leapDay = day === astroLunarDayFromMoment(
-    universalFromStandard( astroHinduSunrise( date - 1 ), HINDU_LOCATION ),
-  )
-  const lastNewMoon = newMoonBefore( critical )
-  const nextNewMoon = newMoonAtOrAfter( critical )
-  const solarMonth = siderealZodiac( lastNewMoon )
-  const leapMonth = solarMonth === siderealZodiac( nextNewMoon )
-  const month = amod( solarMonth + 1, 12 )
-  const year = astroHinduCalendarYear( month <= 2 ? date + 180 : date ) - HINDU_LUNAR_ERA
-  return { year, month, leapMonth, day, leapDay }
-}
-
-// Fixed date corresponding to Hindu lunar date ldate.
-const fixedFromAstroHinduLunar = ( year, month, leapMonth = false, day, leapDay = false ) => {
-  const approx = HINDU_EPOCH + MEAN_SIDEREAL_YEAR
-    * ( year + HINDU_LUNAR_ERA + ( ( month - 1 ) / 12 ) )
-  const s = Math.floor( approx - HINDU_SIDEREAL_YEAR
-    * mod3( ( siderealSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ), -1 / 2, 1 / 2 ) )
-  const k = astroLunarDayFromMoment( s + hr( 6 ) )
-  const mid = astroHinduLunarFromFixed( s - 15 )
-  let est = s + day
-  if ( k > 3 && k < 27 ) {
-    est -= k
-  } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
-    est -= mod3( k, -15, 15 )
-  } else {
-    est -= mod3( k, 15, 45 )
-  }
-  const tau = est - mod3( astroLunarDayFromMoment( est + hr( 6 ) ) - day, -15, 15 )
-  const date = next( tau - 1, ( d => (
-    [ day, amod( day + 1, 30 ) ].includes(
-      astroLunarDayFromMoment( universalFromStandard( astroHinduSunrise( d ), HINDU_LOCATION ) ),
-    )
-  ) ) )
-  return leapDay ? date + 1 : date
-}
 
 // Moment of the first time at or after tee
 // when Hindu solar longitude will be lambda degrees.
@@ -434,85 +240,299 @@ const isHinduLunarOnOrBefore = ( lDate1, lDate2 ) => (
     && ( ( !lDate1.leapDay ) || lDate2.leapDay ) ) ) ) ) ) ) )
 )
 
-// Fixed date of occurrence of Hindu lunar l-month,
-// l-day in Hindu lunar year l-year,
-// taking leap and expunged days into account.
-// When the month is expunged, then the following month is used.
-const hinduDateOccur = ( lYear, lMonth, lDay ) => {
-  const ttry = fixedFromHinduLunar( lYear, lMonth, false, lDay, false )
-  const mid = hinduLunarFromFixed( lDay > 15 ? ttry - 5 : ttry )
-  const isExpunged = lMonth !== mid.month
-  const lDate = {
-    year: mid.year, month: mid.month, leapMonth: mid.leapMonth, day: lDay, leapDay: false,
+const ModernHindu = class {
+  static HINDU_EPOCH = HINDU_EPOCH
+
+  static HINDU_SIDEREAL_YEAR = HINDU_SIDEREAL_YEAR
+
+  static HINDU_SIDEREAL_MONTH = HINDU_SIDEREAL_MONTH
+
+  static HINDU_SYNODIC_MONTH = HINDU_SYNODIC_MONTH
+
+  static HINDU_CREATION = HINDU_CREATION
+
+  static HINDU_ANOMALISTIC_YEAR = HINDU_ANOMALISTIC_YEAR
+
+  static HINDU_ANOMALISTIC_MONTH = HINDU_ANOMALISTIC_MONTH
+
+  static UJJAIN = UJJAIN
+
+  static hinduDayCount = hinduDayCount
+
+  static hinduSineTable = hinduSineTable
+
+  static hinduSine = hinduSine
+
+  static hinduArcsin = hinduArcsin
+
+  static hinduMeanPosition = hinduMeanPosition
+
+  static hinduTruePosition = hinduTruePosition
+
+  static hinduSolarLongitude = hinduSolarLongitude
+
+  static hinduZodiac = hinduZodiac
+
+  static hinduLunarLongitude = hinduLunarLongitude
+
+  static hinduLunarPhase = hinduLunarPhase
+
+  static hinduLunarDayFromMoment = hinduLunarDayFromMoment
+
+  static hinduNewMoonBefore = hinduNewMoonBefore
+
+  static hinduCalendarYear = hinduCalendarYear
+
+  static hinduDailyMotion = hinduDailyMotion
+
+  static hinduTropicalLongitude = hinduTropicalLongitude
+
+  static hinduAscensionalDifference = hinduAscensionalDifference
+
+  static hinduRisingSign = hinduRisingSign
+
+  static hinduSolarSiderealDifference = hinduSolarSiderealDifference
+
+  static hinduEquationOfTime = hinduEquationOfTime
+
+  static ayanamsha = ayanamsha
+
+  static siderealZodiac = siderealZodiac
+
+  static astroHinduCalendarYear = astroHinduCalendarYear
+
+  static astroLunarDayFromMoment = astroLunarDayFromMoment
+
+  static hinduSolarLongitudeAtOrAfter = hinduSolarLongitudeAtOrAfter
+
+  static hinduLunarDayAtOrAfter = hinduLunarDayAtOrAfter
+
+  static isHinduLunarOnOrBefore = isHinduLunarOnOrBefore
+
+  constructor( { location, solarEra, lunarEra, oldSunrise } = {} ) {
+    // Location (Ujjain) for determining Hindu calendar.
+    this.HINDU_LOCATION = location || UJJAIN
+
+    // Years from Kali Yuga until Saka era.
+    this.HINDU_SOLAR_ERA = solarEra || 3179
+
+    // Years from Kali Yuga until Vikrama era.
+    this.HINDU_LUNAR_ERA = lunarEra || 3044
+
+    // Select sunrise method for Surya Sidhantta
+    this.ssSunrise = oldSunrise
+      ? this.hinduSunrise
+      : date => localFromStandard( this.astroHinduSunrise( date ), this.HINDU_LOCATION )
   }
-  if ( isExpunged ) {
-    return next( ttry, d => ( !isHinduLunarOnOrBefore( hinduLunarFromFixed( d ), lDate ) ) ) - 1
+
+  // Sunrise at hindu-location on date.
+  hinduSunrise = date => (
+    date + hr( 6 )
+      + ( ( UJJAIN.longitude - this.HINDU_LOCATION.longitude ) / 360 )
+      - hinduEquationOfTime( date )
+      + ( 1577917828 / ( 1582237828 * 360 ) )
+      * ( hinduAscensionalDifference( date, this.HINDU_LOCATION )
+        + ( 1 / 4 ) * hinduSolarSiderealDifference( date )
+      )
+  )
+
+  // Sunset at hindu-location on date.
+  hinduSunset = date => (
+    date + hr( 18 )
+      + ( ( UJJAIN.longitude - this.HINDU_LOCATION.longitude ) / 360 )
+      - hinduEquationOfTime( date )
+      + ( 1577917828 / ( 1582237828 * 360 ) )
+      * ( -hinduAscensionalDifference( date, this.HINDU_LOCATION )
+        + ( 3 / 4 ) * hinduSolarSiderealDifference( date )
+      )
+  )
+
+  // Return the astronomical sunrise at Hindu location on date, date,
+  // per Lahiri, rounded to nearest minute, as a rational number.
+  astroHinduSunrise = date => {
+    const rise = dawn( date, this.HINDU_LOCATION, angle( 0, 47, 0 ) )
+    return ( ( 1 / 60 ) / 24 ) * Math.round( rise * 24 * 60 )
   }
-  if ( lDay !== hinduLunarFromFixed( ttry ).day ) {
-    return ttry - 1
+
+  // Hindu (Orissa) solar date equivalent to fixed date.
+  hinduSolarFromFixed = date => {
+    const critical = this.ssSunrise( date + 1 )
+    const month = hinduZodiac( critical )
+    const year = hinduCalendarYear( critical ) - this.HINDU_SOLAR_ERA
+    const approx = date - 3 - mod( Math.floor( hinduSolarLongitude( critical ) ), 30 )
+    const start = next( approx, i => hinduZodiac( this.ssSunrise( i + 1 ) ) === month )
+    const day = date - start + 1
+    return { year, month, day }
   }
-  return ttry
+
+  // Fixed date corresponding to Hindu solar date s-date
+  fixedFromHinduSolar = ( year, month, day ) => {
+    const start = Math.floor(
+      ( year + this.HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * HINDU_SIDEREAL_YEAR,
+    ) + HINDU_EPOCH
+    return day - 1 + next( start - 3, d => hinduZodiac( this.ssSunrise( d + 1 ) ) === month )
+  }
+
+  // Hindu lunar date, new-moon scheme, equivalent to fixed date.
+  hinduLunarFromFixed = date => {
+    const critical = this.ssSunrise( date )
+    const day = hinduLunarDayFromMoment( critical )
+    const leapDay = day === hinduLunarDayFromMoment( this.ssSunrise( date - 1 ) )
+    const lastNewMoon = hinduNewMoonBefore( critical )
+    const nextNewMoon = hinduNewMoonBefore( Math.floor( lastNewMoon ) + 35 )
+    const solarMonth = hinduZodiac( lastNewMoon )
+    const leapMonth = solarMonth === hinduZodiac( nextNewMoon )
+    const month = amod( solarMonth + 1, 12 )
+    const year = hinduCalendarYear( month <= 2 ? date + 180 : date ) - this.HINDU_LUNAR_ERA
+    return { year, month, leapMonth, day, leapDay }
+  }
+
+  // Fixed date corresponding to Hindu lunar date.
+  fixedFromHinduLunar = ( year, month, leapMonth = false, day, leapDay = false ) => {
+    const approx = HINDU_EPOCH + HINDU_SIDEREAL_YEAR
+      * ( year + this.HINDU_LUNAR_ERA + ( ( month - 1 ) / 12 ) )
+    const s = Math.floor( approx - HINDU_SIDEREAL_YEAR
+      * mod3( ( hinduSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ), -1 / 2, 1 / 2 ) )
+    const k = hinduLunarDayFromMoment( s + hr( 6 ) )
+    const mid = this.hinduLunarFromFixed( s - 15 )
+    let est = s + day
+    if ( k > 3 && k < 27 ) {
+      est -= k
+    } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
+      est -= mod3( k, -15, 15 )
+    } else {
+      est -= mod3( k, 15, 45 )
+    }
+    const tau = est - mod3( hinduLunarDayFromMoment( est + hr( 6 ) ) - day, -15, 15 )
+    const date = next( tau - 1, ( d => [ day, amod( day + 1, 30 ) ].includes(
+      hinduLunarDayFromMoment( this.ssSunrise( d ) ),
+    ) ) )
+    return leapDay ? date + 1 : date
+  }
+
+  // Hindu lunar date, full-moon scheme, equivalent to fixed date.
+  hinduFullmoonFromFixed = date => {
+    const { year, month, leapMonth, day, leapDay } = this.hinduLunarFromFixed( date )
+    const m = day >= 16 ? this.hinduLunarFromFixed( date + 20 ).month : month
+    return { year, month: m, leapMonth, day, leapDay }
+  }
+
+  // True if Hindu lunar month month in year is expunged.
+  isHinduExpunged = ( year, month ) => (
+    month !== this.hinduLunarFromFixed(
+      this.fixedFromHinduLunar( year, month, false, 15, false ),
+    ).month
+  )
+
+  // Fixed date equivalent to Hindu lunar date in full-moon scheme.
+  fixedFromHinduFullmoon = ( year, month, leapMonth = false, day, leapDay = false ) => {
+    let m
+    if ( leapMonth || day <= 15 ) {
+      m = month
+    } else if ( this.isHinduExpunged( year, amod( month - 1, 12 ) ) ) {
+      m = amod( month - 2, 12 )
+    } else {
+      m = amod( month - 1, 12 )
+    }
+    return this.fixedFromHinduLunar( year, m, leapMonth, day, leapDay )
+  }
+
+  // Geometrical sunset at Hindu location on date.
+  astroHinduSunset = date => dusk( date, this.HINDU_LOCATION, angle( 0, 47, 0 ) )
+
+  // Astronomical Hindu solar date equivalent to fixed date.
+  astroHinduSolarFromFixed = date => {
+    const critical = universalFromStandard(
+      this.astroHinduSunrise( date + 1 ), this.HINDU_LOCATION,
+    )
+    const month = siderealZodiac( critical )
+    const year = astroHinduCalendarYear( critical ) - this.HINDU_SOLAR_ERA
+    const approx = date - 3 - mod( Math.floor( siderealSolarLongitude( critical ) ), 30 )
+    const start = next( approx, i => siderealZodiac(
+      universalFromStandard( this.astroHinduSunrise( i + 1 ), this.HINDU_LOCATION ),
+    ) === month )
+    const day = date - start + 1
+    return { year, month, day }
+  }
+
+  // Fixed date corresponding to Astronomical Hindu solar date
+  fixedFromAstroHinduSolar = ( year, month, day ) => {
+    const approx = HINDU_EPOCH - 3
+      + Math.floor( ( year + this.HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * MEAN_SIDEREAL_YEAR )
+    const start = next( approx, i => siderealZodiac(
+      universalFromStandard( this.astroHinduSunrise( i + 1 ), this.HINDU_LOCATION ),
+    ) === month )
+    return start + day - 1
+  }
+
+  // Astronomical Hindu lunar date equivalent to fixed date.
+  astroHinduLunarFromFixed = date => {
+    const critical = universalFromStandard( this.astroHinduSunrise( date ), this.HINDU_LOCATION )
+    const day = astroLunarDayFromMoment( critical )
+    const leapDay = day === astroLunarDayFromMoment(
+      universalFromStandard( this.astroHinduSunrise( date - 1 ), this.HINDU_LOCATION ),
+    )
+    const lastNewMoon = newMoonBefore( critical )
+    const nextNewMoon = newMoonAtOrAfter( critical )
+    const solarMonth = siderealZodiac( lastNewMoon )
+    const leapMonth = solarMonth === siderealZodiac( nextNewMoon )
+    const month = amod( solarMonth + 1, 12 )
+    const year = astroHinduCalendarYear( month <= 2 ? date + 180 : date ) - this.HINDU_LUNAR_ERA
+    return { year, month, leapMonth, day, leapDay }
+  }
+
+  // Fixed date corresponding to Hindu lunar date ldate.
+  fixedFromAstroHinduLunar = ( year, month, leapMonth = false, day, leapDay = false ) => {
+    const approx = HINDU_EPOCH + MEAN_SIDEREAL_YEAR
+      * ( year + this.HINDU_LUNAR_ERA + ( ( month - 1 ) / 12 ) )
+    const s = Math.floor( approx - HINDU_SIDEREAL_YEAR
+      * mod3( ( siderealSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ), -1 / 2, 1 / 2 ) )
+    const k = astroLunarDayFromMoment( s + hr( 6 ) )
+    const mid = this.astroHinduLunarFromFixed( s - 15 )
+    let est = s + day
+    if ( k > 3 && k < 27 ) {
+      est -= k
+    } else if ( mid.month !== month || ( mid.leapMonth && !leapMonth ) ) {
+      est -= mod3( k, -15, 15 )
+    } else {
+      est -= mod3( k, 15, 45 )
+    }
+    const tau = est - mod3( astroLunarDayFromMoment( est + hr( 6 ) ) - day, -15, 15 )
+    const date = next( tau - 1, ( d => (
+      [ day, amod( day + 1, 30 ) ].includes(
+        astroLunarDayFromMoment(
+          universalFromStandard( this.astroHinduSunrise( d ), this.HINDU_LOCATION ),
+        ),
+      )
+    ) ) )
+    return leapDay ? date + 1 : date
+  }
+
+  // Fixed date of occurrence of Hindu lunar l-month,
+  // l-day in Hindu lunar year l-year,
+  // taking leap and expunged days into account.
+  // When the month is expunged, then the following month is used.
+  hinduDateOccur = ( lYear, lMonth, lDay ) => {
+    const ttry = this.fixedFromHinduLunar( lYear, lMonth, false, lDay, false )
+    const mid = this.hinduLunarFromFixed( lDay > 15 ? ttry - 5 : ttry )
+    const isExpunged = lMonth !== mid.month
+    const lDate = {
+      year: mid.year, month: mid.month, leapMonth: mid.leapMonth, day: lDay, leapDay: false,
+    }
+    if ( isExpunged ) {
+      return next( ttry, d => !isHinduLunarOnOrBefore( this.hinduLunarFromFixed( d ), lDate ) ) - 1
+    }
+    if ( lDay !== this.hinduLunarFromFixed( ttry ).day ) {
+      return ttry - 1
+    }
+    return ttry
+  }
+
+  // Hindu lunar station (nakshatra) at sunrise on date.
+  hinduLunarStation = date => {
+    const critical = this.ssSunrise( date )
+    return Math.floor( hinduLunarLongitude( critical ) / angle( 0, 800, 0 ) ) + 1
+  }
 }
 
-// Hindu lunar station (nakshatra) at sunrise on date.
-const hinduLunarStation = date => {
-  const critical = localFromStandard( astroHinduSunrise( date ), HINDU_LOCATION )
-  return Math.floor( hinduLunarLongitude( critical ) / angle( 0, 800, 0 ) ) + 1
-}
-
-module.exports = {
-  HINDU_EPOCH,
-  HINDU_SIDEREAL_YEAR,
-  HINDU_SIDEREAL_MONTH,
-  HINDU_SYNODIC_MONTH,
-  HINDU_CREATION,
-  HINDU_ANOMALISTIC_YEAR,
-  HINDU_ANOMALISTIC_MONTH,
-  HINDU_SOLAR_ERA,
-  HINDU_LUNAR_ERA,
-  UJJAIN,
-  HINDU_LOCATION,
-  hinduDayCount,
-  hinduSineTable,
-  hinduSine,
-  hinduArcsin,
-  hinduMeanPosition,
-  hinduTruePosition,
-  hinduSolarLongitude,
-  hinduZodiac,
-  hinduLunarLongitude,
-  hinduLunarPhase,
-  hinduLunarDayFromMoment,
-  hinduNewMoonBefore,
-  hinduCalendarYear,
-  hinduDailyMotion,
-  hinduTropicalLongitude,
-  hinduAscensionalDifference,
-  hinduRisingSign,
-  hinduSolarSiderealDifference,
-  hinduEquationOfTime,
-  hinduSunrise,
-  hinduSunset,
-  astroHinduSunrise,
-  hinduSolarFromFixed,
-  fixedFromHinduSolar,
-  hinduLunarFromFixed,
-  fixedFromHinduLunar,
-  hinduFullmoonFromFixed,
-  isHinduExpunged,
-  fixedFromHinduFullmoon,
-  ayanamsha,
-  astroHinduSunset,
-  siderealZodiac,
-  astroHinduCalendarYear,
-  astroHinduSolarFromFixed,
-  fixedFromAstroHinduSolar,
-  astroLunarDayFromMoment,
-  astroHinduLunarFromFixed,
-  fixedFromAstroHinduLunar,
-  hinduSolarLongitudeAtOrAfter,
-  hinduLunarDayAtOrAfter,
-  isHinduLunarOnOrBefore,
-  hinduDateOccur,
-  hinduLunarStation,
-}
+module.exports = ModernHindu

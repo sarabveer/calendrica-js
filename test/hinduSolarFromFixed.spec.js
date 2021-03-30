@@ -1,5 +1,7 @@
-const { modernHindu: { hinduSolarFromFixed } } = require( '../index' )
+const { ModernHindu } = require( '../index' )
 const rd = require( './rd' )
+
+const hindu = new ModernHindu( { oldSunrise: true } )
 
 const results = [
   { year: -664, month: 5, day: 19 },
@@ -41,6 +43,6 @@ const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 
 describe( 'hinduSolarFromFixed()', () => {
   data.map( ( [ rd, result ] ) => it( `Output of hinduSolarFromFixed(${rd}) should be: '${result}'`, () => {
-    expect( hinduSolarFromFixed( rd ) ).toEqual( result )
+    expect( hindu.hinduSolarFromFixed( rd ) ).toEqual( result )
   } ) )
 } )

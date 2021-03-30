@@ -1,5 +1,7 @@
-const { modernHindu: { hinduLunarFromFixed } } = require( '../index' )
+const { ModernHindu } = require( '../index' )
 const rd = require( './rd' )
+
+const hindu = new ModernHindu( { oldSunrise: true } )
 
 const results = [
   { year: -529, month: 6, leapMonth: false, day: 11, leapDay: false },
@@ -39,12 +41,8 @@ const results = [
 
 const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 
-// Remove 5th result due to Sunrise calc difference
-// R.D. 210155
-data.splice( 5, 1 )
-
 describe( 'hinduLunarFromFixed()', () => {
   data.map( ( [ rd, result ] ) => it( `Output of hinduLunarFromFixed(${rd}) should be: '${result}'`, () => {
-    expect( hinduLunarFromFixed( rd ) ).toEqual( result )
+    expect( hindu.hinduLunarFromFixed( rd ) ).toEqual( result )
   } ) )
 } )
