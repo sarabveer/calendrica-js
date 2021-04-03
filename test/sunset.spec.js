@@ -1,9 +1,9 @@
+const { JERUSALEM } = require( './locations' )
+const rd = require( './rd' )
 const {
   general: { timeFromMoment },
   astronomy: { sunset },
 } = require( '../index' )
-const { JERUSALEM } = require( './locations' )
-const rd = require( './rd' )
 
 const results = [
   0.780845,

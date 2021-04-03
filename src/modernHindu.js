@@ -1,18 +1,18 @@
-const { mod, amod, mod3, next, binarySearch, invertAngular, hr, angle, sinDegrees } = require( './general' )
 const { FEBRUARY } = require( './gregorian' )
 const { fixedFromJulian } = require( './julian' )
 const {
-  universalFromStandard,
-  localFromStandard,
-  solarLongitude,
   MEAN_SIDEREAL_YEAR,
-  siderealSolarLongitude,
-  lunarPhase,
-  newMoonBefore,
-  newMoonAtOrAfter,
   dawn,
   dusk,
+  localFromStandard,
+  lunarPhase,
+  newMoonAtOrAfter,
+  newMoonBefore,
+  siderealSolarLongitude,
+  solarLongitude,
+  universalFromStandard,
 } = require( './astronomy' )
+const { amod, angle, binarySearch, hr, invertAngular, mod, mod3, next, sinDegrees } = require( './general' )
 
 // Fixed date of start of the Hindu calendar (Kali Yuga).
 const HINDU_EPOCH = fixedFromJulian( -3102, FEBRUARY, 18 )

@@ -1,26 +1,23 @@
+const { fixedFromJulian } = require( './julian' )
 const {
+  angle,
+  arccosDegrees,
+  arcsinDegrees,
+  arctanDegrees,
+  cosDegrees,
+  final,
+  hr,
+  invertAngular,
   mod,
   mod3,
   next,
-  final,
-  invertAngular,
-  sigma,
   poly,
-  hr,
   sec,
-  angle,
+  sigma,
   sinDegrees,
-  cosDegrees,
   tanDegrees,
-  arcsinDegrees,
-  arccosDegrees,
-  arctanDegrees,
 } = require( './general' )
-const {
-  gregorianYearFromFixed,
-  gregorianDateDifference,
-} = require( './gregorian' )
-const { fixedFromJulian } = require( './julian' )
+const { gregorianDateDifference, gregorianYearFromFixed } = require( './gregorian' )
 
 // Difference between UT and local mean time at longitude phi as a fraction of a day.
 const zoneFromLongitude = phi => phi / 360

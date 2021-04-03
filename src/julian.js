@@ -1,5 +1,5 @@
 const { mod } = require( './general' )
-const { JANUARY, MARCH, DECEMBER, fixedFromGregorian } = require( './gregorian' )
+const { DECEMBER, JANUARY, MARCH, fixedFromGregorian } = require( './gregorian' )
 
 // Fixed date of start of the Julian calendar.
 const JULIAN_EPOCH = fixedFromGregorian( 0, DECEMBER, 30 )

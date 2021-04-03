@@ -1,9 +1,9 @@
+const { TEHRAN } = require( './locations' )
+const rd = require( './rd' )
 const {
   general: { timeFromMoment },
   astronomy: { standardFromUniversal, midday },
 } = require( '../index' )
-const { TEHRAN } = require( './locations' )
-const rd = require( './rd' )
 
 const results = [
   0.504216,

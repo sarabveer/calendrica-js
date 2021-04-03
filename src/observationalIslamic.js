@@ -1,6 +1,6 @@
-const { mod, hr } = require( './general' )
-const { MEAN_SYNODIC_MONTH, phasisOnOrBefore, phasisOnOrAfter } = require( './astronomy' )
 const { fixedFromJulian } = require( './julian' )
+const { MEAN_SYNODIC_MONTH, phasisOnOrAfter, phasisOnOrBefore } = require( './astronomy' )
+const { hr, mod } = require( './general' )
 
 // Fixed date of start of the Islamic calendar.
 const ISLAMIC_EPOCH = fixedFromJulian( 622, 7, 16 )
