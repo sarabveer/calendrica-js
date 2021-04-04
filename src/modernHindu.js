@@ -2,9 +2,11 @@ const { FEBRUARY } = require( './gregorian' )
 const { fixedFromJulian } = require( './julian' )
 const {
   MEAN_SIDEREAL_YEAR,
+  MEAN_SYNODIC_MONTH,
   dawn,
   dusk,
   localFromStandard,
+  lunarLongitude,
   lunarPhase,
   newMoonAtOrAfter,
   newMoonBefore,
@@ -215,6 +217,17 @@ const hinduSolarLongitudeAtOrAfter = ( lambda, tee ) => {
   return invertAngular( hinduSolarLongitude, lambda, a, b )
 }
 
+// CUSTOM FUNCTION
+// Moment of the first time at or after tee
+// when Hindu solar longitude will be lambda degrees.
+const astroHinduSolarLongitudeAtOrAfter = ( lambda, tee ) => {
+  const tau = tee + MEAN_SIDEREAL_YEAR * ( 1 / 360 )
+    * mod( lambda - siderealSolarLongitude( tee ), 360 )
+  const a = Math.max( tee, tau - 5 )
+  const b = tau + 5
+  return invertAngular( siderealSolarLongitude, lambda, a, b )
+}
+
 // Time lunar-day (tithi) number k begins at or after
 // moment tee.  k can be fractional (for karanas).
 const hinduLunarDayAtOrAfter = ( k, tee ) => {
@@ -224,6 +237,18 @@ const hinduLunarDayAtOrAfter = ( k, tee ) => {
   const a = Math.max( tee, tau - 2 )
   const b = tau + 2
   return invertAngular( hinduLunarPhase, phase, a, b )
+}
+
+// CUSTOM FUNCTION
+// Time lunar-day (tithi) number k begins at or after
+// moment tee.  k can be fractional (for karanas).
+const astroHinduLunarDayAtOrAfter = ( k, tee ) => {
+  const phase = ( k - 1 ) * 12
+  const tau = tee + ( 1 / 360 ) * mod( phase - lunarPhase( tee ), 360 )
+    * MEAN_SYNODIC_MONTH
+  const a = Math.max( tee, tau - 2 )
+  const b = tau + 2
+  return invertAngular( lunarPhase, phase, a, b )
 }
 
 // True if Hindu lunar date l-date1 is on or before
@@ -305,7 +330,11 @@ const ModernHindu = class {
 
   static hinduSolarLongitudeAtOrAfter = hinduSolarLongitudeAtOrAfter
 
+  static astroHinduSolarLongitudeAtOrAfter = astroHinduSolarLongitudeAtOrAfter
+
   static hinduLunarDayAtOrAfter = hinduLunarDayAtOrAfter
+
+  static astroHinduLunarDayAtOrAfter = astroHinduLunarDayAtOrAfter
 
   static isHinduLunarOnOrBefore = isHinduLunarOnOrBefore
 
@@ -417,10 +446,26 @@ const ModernHindu = class {
     return { year, month: m, leapMonth, day, leapDay }
   }
 
+  // CUSTOM FUNCTION
+  // Hindu lunar date, full-moon scheme, equivalent to fixed date.
+  astroHinduFullmoonFromFixed = date => {
+    const { year, month, leapMonth, day, leapDay } = this.astroHinduLunarFromFixed( date )
+    const m = day >= 16 ? this.astroHinduLunarFromFixed( date + 20 ).month : month
+    return { year, month: m, leapMonth, day, leapDay }
+  }
+
   // True if Hindu lunar month month in year is expunged.
   isHinduExpunged = ( year, month ) => (
     month !== this.hinduLunarFromFixed(
       this.fixedFromHinduLunar( year, month, false, 15, false ),
+    ).month
+  )
+
+  // CUSTOM FUNCTION
+  // True if Hindu lunar month month in year is expunged.
+  isAstroHinduExpunged = ( year, month ) => (
+    month !== this.astroHinduLunarFromFixed(
+      this.fixedFromAstroHinduLunar( year, month, false, 15, false ),
     ).month
   )
 
@@ -435,6 +480,20 @@ const ModernHindu = class {
       m = amod( month - 1, 12 )
     }
     return this.fixedFromHinduLunar( year, m, leapMonth, day, leapDay )
+  }
+
+  // CUSTOM FUNCTION
+  // Fixed date equivalent to Hindu lunar date in full-moon scheme.
+  fixedFromAstroHinduFullmoon = ( year, month, leapMonth = false, day, leapDay = false ) => {
+    let m
+    if ( leapMonth || ( day <= 15 ) ) {
+      m = month
+    } else if ( this.isAstroHinduExpunged( year, amod( month - 1, 12 ) ) ) {
+      m = amod( month - 2, 12 )
+    } else {
+      m = amod( month - 1, 12 )
+    }
+    return this.fixedFromAstroHinduLunar( year, m, leapMonth, day, leapDay )
   }
 
   // Geometrical sunset at Hindu location on date.
@@ -528,10 +587,42 @@ const ModernHindu = class {
     return ttry
   }
 
+  // CUSTOM FUNCTION
+  // Fixed date of occurrence of Hindu lunar l-month,
+  // l-day in Hindu lunar year l-year,
+  // taking leap and expunged days into account.
+  // When the month is expunged, then the following month is used.
+  astroHinduDateOccur = ( lYear, lMonth, lDay ) => {
+    const ttry = this.fixedFromAstroHinduLunar( lYear, lMonth, false, lDay, false )
+    const mid = this.astroHinduLunarFromFixed( lDay > 15 ? ttry - 5 : ttry )
+    const isExpunged = lMonth !== mid.month
+    const lDate = {
+      year: mid.year, month: mid.month, leapMonth: mid.leapMonth, day: lDay, leapDay: false,
+    }
+    if ( isExpunged ) {
+      return next( ttry, d => (
+        !isHinduLunarOnOrBefore( this.astroHinduLunarFromFixed( d ), lDate )
+      ) ) - 1
+    }
+    if ( lDay !== this.astroHinduLunarFromFixed( ttry ).day ) {
+      return ttry - 1
+    }
+    return ttry
+  }
+
   // Hindu lunar station (nakshatra) at sunrise on date.
   hinduLunarStation = date => {
     const critical = this.ssSunrise( date )
     return Math.floor( hinduLunarLongitude( critical ) / angle( 0, 800, 0 ) ) + 1
+  }
+
+  // CUSTOM FUNCTION
+  // Astro Hindu lunar station (nakshatra) at sunrise on date.
+  astroHinduLunarStation = date => {
+    const critical = universalFromStandard( this.astroHinduSunrise( date ), this.HINDU_LOCATION )
+    return Math.floor(
+      mod( lunarLongitude( critical ) - ayanamsha( critical ), 360 ) / angle( 0, 800, 0 ),
+    ) + 1
   }
 }
 
