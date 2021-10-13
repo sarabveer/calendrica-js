@@ -61,7 +61,7 @@ const ephemerisCorrection = tee => {
   if ( year >= 2051 && year <= 2150 ) {
     // c2051
     return ( 1 / 86400 )
-    * ( -20 + 32 * ( y1820 ** 2 ) + 0.5628 * ( 2150 - year ) )
+    * ( -20 + 32 * ( y1820 ** 2 ) - 0.5628 * ( 2150 - year ) )
   }
   if ( year >= 2006 && year <= 2050 ) {
     // c2006
