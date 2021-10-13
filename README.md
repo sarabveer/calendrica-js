@@ -12,12 +12,10 @@ The Calendrical functions were mainly ported to Javascript for use in the `nanak
   - Section 2: The Gregorian Calendar
   - Section 3: The Julian Calendar
   - Section 14: Time and Astronomy
-  - Section 18.3: The Observational Islamic Calendar¹
-  - Section 20: The Modern Hindu Calendars¹
+  - Section 18.3: The Observational Islamic Calendar
+  - Section 20: The Modern Hindu Calendars
 
 The file `general.js` includes functions needed for mathematical computations given in the book and are taken from *Section 1: Calendar Basics*.
-
-¹ For these functions, the reference location used is Amritsar, Punjab.
 
 ### Tests
 
