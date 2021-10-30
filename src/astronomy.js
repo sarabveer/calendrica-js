@@ -16,6 +16,7 @@ const {
   sigma,
   sinDegrees,
   tanDegrees,
+  timeFromMoment,
 } = require( './general' )
 const { gregorianDateDifference, gregorianYearFromFixed } = require( './gregorian' )
 
@@ -728,6 +729,49 @@ const sunset = ( date, location ) => {
   return dusk( date, location, alpha )
 }
 
+// Length of daytime temporal hour on fixed date at location.
+// Returns bogus if there no sunrise or sunset on date.
+const daytimeTemporalHour = ( date, location ) => {
+  if ( sunrise( date, location ) === null || sunset( date, location ) === null ) {
+    return null
+  }
+  return ( 1 / 12 ) * ( sunset( date, location ) - sunrise( date, location ) )
+}
+
+// Length of nighttime temporal hour on fixed date at location.
+// Returns bogus if there no sunrise or sunset on date.
+const nighttimeTemporalHour = ( date, location ) => {
+  if ( sunrise( date + 1, location ) === null || sunset( date, location ) === null ) {
+    return null
+  }
+  return ( 1 / 12 ) * ( sunrise( date + 1, location ) - sunset( date, location ) )
+}
+
+// Standard time of temporal moment tee at location.
+// Returns bogus if temporal hour is undefined that day.
+const standardFromSundial = ( tee, location ) => {
+  const date = Math.floor( tee )
+  const hour = 24 * timeFromMoment( tee )
+  let h
+  if ( hour >= 6 && hour <= 18 ) {
+    h = daytimeTemporalHour( date, location )
+  } else if ( hour < 6 ) {
+    h = nighttimeTemporalHour( date - 1, location )
+  } else {
+    h = nighttimeTemporalHour( date, location )
+  }
+  if ( h === null ) {
+    return null
+  }
+  if ( hour >= 6 && hour <= 18 ) {
+    return sunrise( date, location ) + ( hour - 6 ) * h
+  }
+  if ( hour < 6 ) {
+    return sunset( date - 1, location ) + ( hour + 6 ) * h
+  }
+  return sunset( date, location ) + ( hour - 18 ) * h
+}
+
 // Angular separation of sun and moon at moment tee.
 const arcOfLight = tee => (
   arccosDegrees( cosDegrees( lunarLatitude( tee ) ) * cosDegrees( lunarPhase( tee ) ) )
@@ -829,6 +873,9 @@ module.exports = {
   refraction,
   sunrise,
   sunset,
+  daytimeTemporalHour,
+  nighttimeTemporalHour,
+  standardFromSundial,
   arcOfLight,
   simpleBestView,
   shaukatCriterion,
