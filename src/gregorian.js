@@ -58,6 +58,15 @@ const fixedFromGregorian = ( year, month, day ) => (
 // Fixed date of January 1 in g-year.
 const gregorianNewYear = gYear => fixedFromGregorian( gYear, JANUARY, 1 )
 
+// Fixed date of December 31 in g-year.
+const gregorianYearEnd = gYear => fixedFromGregorian( gYear, DECEMBER, 31 )
+
+// The range of moments in Gregorian year g-year.
+const gregorianYearRange = gYear => [
+  gregorianNewYear( gYear ),
+  gregorianNewYear( gYear + 1 ),
+]
+
 // Gregorian year corresponding to the fixed date.
 const gregorianYearFromFixed = date => {
   const d0 = date - GREGORIAN_EPOCH
@@ -109,6 +118,8 @@ module.exports = {
   isGregorianLeapYear,
   fixedFromGregorian,
   gregorianNewYear,
+  gregorianYearEnd,
+  gregorianYearRange,
   gregorianYearFromFixed,
   gregorianFromFixed,
   gregorianDateDifference,

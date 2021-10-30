@@ -138,6 +138,12 @@ const momentFromUnix = s => UNIX_EPOCH + ( s / ( 24 * 60 * 60 ) )
 // Unix second count from moment tee
 const unixFromMoment = tee => 24 * 60 * 60 * ( tee - UNIX_EPOCH )
 
+// True if tee is in half-open range.
+const isInRange = ( tee, range ) => range[ 0 ] <= tee && tee < range[ 1 ]
+
+// Those moments in list ell that occur in range.
+const listRange = ( ell, range ) => ell.filter( tee => isInRange( tee, range ) )
+
 module.exports = {
   mod,
   amod,
@@ -170,4 +176,6 @@ module.exports = {
   UNIX_EPOCH,
   momentFromUnix,
   unixFromMoment,
+  isInRange,
+  listRange,
 }
