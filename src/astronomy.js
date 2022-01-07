@@ -328,7 +328,7 @@ const SIDEREAL_START = precession( solarLongitudeAfter( 180, fixedFromJulian( 28
 
 // Sidereal solar longitude at moment tee
 const siderealSolarLongitude = tee => (
-  mod( solarLongitude( tee ) - precession( tee ) + SIDEREAL_START, 360 )
+  mod( solarLongitude( tee ) - precession( tee ) - nutation( tee ) + SIDEREAL_START, 360 )
 )
 
 // Type: Duration
