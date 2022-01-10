@@ -1,8 +1,10 @@
 const { fixedFromJulian } = require( './julian' )
 const { FEBRUARY, gregorianNewYear, gregorianYearRange } = require( './gregorian' )
 const {
+  J2000,
   MEAN_SIDEREAL_YEAR,
   MEAN_SYNODIC_MONTH,
+  MEAN_TROPICAL_YEAR,
   dawn,
   dusk,
   localFromStandard,
@@ -206,19 +208,6 @@ const hinduEquationOfTime = date => {
     * HINDU_SIDEREAL_YEAR
 }
 
-// Difference between tropical and sidereal solar longitude.
-const ayanamsha = tee => mod3( solarLongitude( tee ) - siderealSolarLongitude( tee ), -180, 180 )
-
-// Sidereal zodiacal sign of the sun, as integer in range 1..12, at moment tee.
-const siderealZodiac = tee => Math.floor( siderealSolarLongitude( tee ) / 30 ) + 1
-
-// Astronomical Hindu solar year KY at given moment tee.
-const astroHinduCalendarYear = tee => (
-  Math.round(
-    ( ( tee - HINDU_EPOCH ) / MEAN_SIDEREAL_YEAR ) - ( siderealSolarLongitude( tee ) / 360 ),
-  )
-)
-
 // Phase of moon (tithi) at moment tee, as an integer in the range 1..30.
 const astroLunarDayFromMoment = tee => Math.floor( lunarPhase( tee ) / 12 ) + 1
 
@@ -230,17 +219,6 @@ const hinduSolarLongitudeAtOrAfter = ( lambda, tee ) => {
   const a = Math.max( tee, tau - 5 )
   const b = tau + 5
   return invertAngular( hinduSolarLongitude, lambda, a, b )
-}
-
-// CUSTOM FUNCTION
-// Moment of the first time at or after tee
-// when Hindu solar longitude will be lambda degrees.
-const astroHinduSolarLongitudeAtOrAfter = ( lambda, tee ) => {
-  const tau = tee + MEAN_SIDEREAL_YEAR * ( 1 / 360 )
-    * mod( lambda - siderealSolarLongitude( tee ), 360 )
-  const a = Math.max( tee, tau - 5 )
-  const b = tau + 5
-  return invertAngular( siderealSolarLongitude, lambda, a, b )
 }
 
 // Time lunar-day (tithi) number k begins at or after
@@ -335,17 +313,9 @@ const ModernHindu = class {
 
   static hinduEquationOfTime = hinduEquationOfTime
 
-  static ayanamsha = ayanamsha
-
-  static siderealZodiac = siderealZodiac
-
-  static astroHinduCalendarYear = astroHinduCalendarYear
-
   static astroLunarDayFromMoment = astroLunarDayFromMoment
 
   static hinduSolarLongitudeAtOrAfter = hinduSolarLongitudeAtOrAfter
-
-  static astroHinduSolarLongitudeAtOrAfter = astroHinduSolarLongitudeAtOrAfter
 
   static hinduLunarDayAtOrAfter = hinduLunarDayAtOrAfter
 
@@ -353,7 +323,7 @@ const ModernHindu = class {
 
   static isHinduLunarOnOrBefore = isHinduLunarOnOrBefore
 
-  constructor( { location, solarEra, lunarEra, oldSunrise } = {} ) {
+  constructor( { location, solarEra, lunarEra, oldSunrise, customAyanamsha } = {} ) {
     // Location (Ujjain) for determining Hindu calendar.
     this.HINDU_LOCATION = location || UJJAIN
 
@@ -362,6 +332,18 @@ const ModernHindu = class {
 
     // Years from Kali Yuga until Vikrama era.
     this.HINDU_LUNAR_ERA = lunarEra || 3044
+
+    // Use custom function for Ayanamsha
+    this.siderealSolarLongitude = tee => (
+      customAyanamsha
+        ? mod( solarLongitude( tee ) - customAyanamsha( tee ), 360 )
+        : siderealSolarLongitude( tee )
+    )
+
+    // Set Mean Solar Year depending on Ayanamsha
+    this.MEAN_SOLAR_YEAR = this.ayanamsha( J2000 ) === 0
+      ? MEAN_TROPICAL_YEAR
+      : MEAN_SIDEREAL_YEAR
 
     // Select sunrise method for Surya Sidhantta
     if ( oldSunrise ) {
@@ -549,13 +531,29 @@ const ModernHindu = class {
     this.HINDU_LOCATION,
   )
 
+  // Difference between tropical and sidereal solar longitude.
+  ayanamsha = tee => mod3( solarLongitude( tee ) - this.siderealSolarLongitude( tee ), -180, 180 )
+
+  // Sidereal zodiacal sign of the sun, as integer in range 1..12, at moment tee.
+  siderealZodiac = tee => Math.floor( this.siderealSolarLongitude( tee ) / 30 ) + 1
+
+  // Astronomical Hindu solar year KY at given moment tee.
+  astroHinduCalendarYear = tee => (
+    Math.round(
+      ( ( tee - HINDU_EPOCH ) / this.MEAN_SOLAR_YEAR )
+      - ( this.siderealSolarLongitude( tee ) / 360 ),
+    )
+  )
+
   // Astronomical Hindu solar date equivalent to fixed date.
   astroHinduSolarFromFixed = date => {
     const critical = this.astroHinduSunrise( date + 1 )
-    const month = siderealZodiac( critical )
-    const year = astroHinduCalendarYear( critical ) - this.HINDU_SOLAR_ERA
-    const approx = date - 3 - mod( Math.floor( siderealSolarLongitude( critical ) ), 30 )
-    const start = next( approx, i => siderealZodiac( this.astroHinduSunrise( i + 1 ) ) === month )
+    const month = this.siderealZodiac( critical )
+    const year = this.astroHinduCalendarYear( critical ) - this.HINDU_SOLAR_ERA
+    const approx = date - 3 - mod( Math.floor( this.siderealSolarLongitude( critical ) ), 30 )
+    const start = next( approx, i => this.siderealZodiac(
+      this.astroHinduSunrise( i + 1 ),
+    ) === month )
     const day = date - start + 1
     return { year, month, day }
   }
@@ -563,8 +561,12 @@ const ModernHindu = class {
   // Fixed date corresponding to Astronomical Hindu solar date
   fixedFromAstroHinduSolar = ( year, month, day ) => {
     const approx = HINDU_EPOCH - 3
-      + Math.floor( ( year + this.HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * MEAN_SIDEREAL_YEAR )
-    const start = next( approx, i => siderealZodiac( this.astroHinduSunrise( i + 1 ) ) === month )
+      + Math.floor(
+        ( year + this.HINDU_SOLAR_ERA + ( ( month - 1 ) / 12 ) ) * this.MEAN_SOLAR_YEAR,
+      )
+    const start = next( approx, i => this.siderealZodiac(
+      this.astroHinduSunrise( i + 1 ),
+    ) === month )
     return start + day - 1
   }
 
@@ -575,19 +577,24 @@ const ModernHindu = class {
     const leapDay = day === astroLunarDayFromMoment( this.astroHinduSunrise( date - 1 ) )
     const lastNewMoon = newMoonBefore( critical )
     const nextNewMoon = newMoonAtOrAfter( critical )
-    const solarMonth = siderealZodiac( lastNewMoon )
-    const leapMonth = solarMonth === siderealZodiac( nextNewMoon )
+    const solarMonth = this.siderealZodiac( lastNewMoon )
+    const leapMonth = solarMonth === this.siderealZodiac( nextNewMoon )
     const month = amod( solarMonth + 1, 12 )
-    const year = astroHinduCalendarYear( month <= 2 ? date + 180 : date ) - this.HINDU_LUNAR_ERA
+    const year = this.astroHinduCalendarYear( month <= 2 ? date + 180 : date )
+      - this.HINDU_LUNAR_ERA
     return { year, month, leapMonth, day, leapDay }
   }
 
   // Fixed date corresponding to Hindu lunar date ldate.
   fixedFromAstroHinduLunar = ( year, month, leapMonth = false, day, leapDay = false ) => {
-    const approx = HINDU_EPOCH + MEAN_SIDEREAL_YEAR
+    const approx = HINDU_EPOCH + this.MEAN_SOLAR_YEAR
       * ( year + this.HINDU_LUNAR_ERA + ( ( month - 1 ) / 12 ) )
     const s = Math.floor( approx - HINDU_SIDEREAL_YEAR
-      * mod3( ( siderealSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ), -1 / 2, 1 / 2 ) )
+      * mod3(
+        ( this.siderealSolarLongitude( approx ) / 360 ) - ( ( month - 1 ) / 12 ),
+        -1 / 2,
+        1 / 2,
+      ) )
     const k = astroLunarDayFromMoment( s + hr( 6 ) )
     const mid = this.astroHinduLunarFromFixed( s - 15 )
     let est = s + day
@@ -728,8 +735,19 @@ const ModernHindu = class {
   astroHinduLunarStation = date => {
     const critical = this.astroHinduSunrise( date )
     return Math.floor(
-      mod( lunarLongitude( critical ) - ayanamsha( critical ), 360 ) / angle( 0, 800, 0 ),
+      mod( lunarLongitude( critical ) - this.ayanamsha( critical ), 360 ) / angle( 0, 800, 0 ),
     ) + 1
+  }
+
+  // CUSTOM FUNCTION
+  // Moment of the first time at or after tee
+  // when Hindu solar longitude will be lambda degrees.
+  astroHinduSolarLongitudeAtOrAfter = ( lambda, tee ) => {
+    const tau = tee + this.MEAN_SOLAR_YEAR * ( 1 / 360 )
+      * mod( lambda - this.siderealSolarLongitude( tee ), 360 )
+    const a = Math.max( tee, tau - 5 )
+    const b = tau + 5
+    return invertAngular( this.siderealSolarLongitude, lambda, a, b )
   }
 }
 
