@@ -331,6 +331,15 @@ const siderealSolarLongitude = tee => (
   mod( solarLongitude( tee ) - precession( tee ) - nutation( tee ) + SIDEREAL_START, 360 )
 )
 
+// Type: (season moment) -> moment
+// Approximate moment at or before tee when solar longitude just exceeded lambda degrees.
+const estimatePriorSolarLongitude = ( lambda, tee ) => {
+  const rate = MEAN_TROPICAL_YEAR / 360
+  const tau = tee - rate * mod( solarLongitude( tee ) - lambda, 360 )
+  const capDelta = mod3( solarLongitude( tau ) - lambda, -180, 180 )
+  return Math.min( tee, tau - rate * capDelta )
+}
+
 // Type: Duration
 const MEAN_SYNODIC_MONTH = 29.530588861
 
@@ -850,6 +859,7 @@ module.exports = {
   MEAN_SIDEREAL_YEAR,
   SIDEREAL_START,
   siderealSolarLongitude,
+  estimatePriorSolarLongitude,
   MEAN_SYNODIC_MONTH,
   meanLunarLongitude,
   lunarElongation,

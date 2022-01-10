@@ -21,16 +21,8 @@ const PARIS = {
   zone: hr( 1 ),
 }
 
-const TEHRAN = {
-  latitude: 35.68,
-  longitude: 51.42,
-  elevation: 1100,
-  zone: hr( 3 + 1 / 2 ),
-}
-
 module.exports = {
   JERUSALEM,
   MECCA,
   PARIS,
-  TEHRAN,
 }

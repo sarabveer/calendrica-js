@@ -1,8 +1,8 @@
-const { TEHRAN } = require( './locations' )
 const rd = require( './rd' )
 const {
+  Persian: { TEHRAN, middayInTehran },
   general: { timeFromMoment },
-  astronomy: { standardFromUniversal, midday },
+  astronomy: { standardFromUniversal },
 } = require( '../index' )
 
 const results = [
@@ -46,7 +46,7 @@ const data = rd.map( ( rd, i ) => [ rd, results[ i ] ] )
 describe( 'midday()', () => {
   data.map( ( [ rd, result ] ) => it( `Output of midday(${rd}) should be: '${result}'`, () => {
     expect(
-      timeFromMoment( standardFromUniversal( midday( rd, TEHRAN ), TEHRAN ) ),
+      timeFromMoment( standardFromUniversal( middayInTehran( rd ), TEHRAN ) ),
     ).toBeCloseTo( result )
   } ) )
 } )
