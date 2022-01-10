@@ -7,8 +7,6 @@ const {
   MEAN_TROPICAL_YEAR,
   dawn,
   dusk,
-  localFromStandard,
-  localFromUniveral,
   lunarLongitude,
   lunarPhase,
   newMoonAtOrAfter,
@@ -346,23 +344,37 @@ const ModernHindu = class {
       : MEAN_SIDEREAL_YEAR
 
     // Select sunrise method for Surya Sidhantta
+    // Use SS sunrise calc if oldSunrise is true
     if ( oldSunrise ) {
-      // Use SS sunrise calc if oldSunrise is true
+      // Auto-manages LMT convertion between UJJAIN and HINDU_LOCATION
       this.ssSunrise = this.hinduSunrise
+      this.ssSunset = this.hinduSunset
       this.ssSundial = this.hinduStandardFromSundial
-    } else if ( location === UJJAIN ) {
-      // If location is default UJJAIN, then use astro directly as timezone is already LMT
+    // If location is default UJJAIN, then use astro directly as timezone is already LMT
+    } else if ( this.HINDU_LOCATION === UJJAIN ) {
       this.ssSunrise = date => (
         standardFromUniversal( this.astroHinduSunrise( date ), this.HINDU_LOCATION )
       )
+      this.ssSunset = date => (
+        standardFromUniversal( this.astroHinduSunset( date ), this.HINDU_LOCATION )
+      )
       this.ssSundial = tee => standardFromSundial( tee, this.HINDU_LOCATION )
+    // Convert astro sunrise to local mean time of UJJAIN
     } else {
-      // Convert astro sunrise to local mean time
       this.ssSunrise = date => (
-        localFromUniveral( this.astroHinduSunrise( date ), this.HINDU_LOCATION )
+        standardFromUniversal( this.astroHinduSunrise( date ), UJJAIN )
+      )
+      this.ssSunset = date => (
+        standardFromUniversal( this.astroHinduSunset( date ), UJJAIN )
       )
       this.ssSundial = tee => (
-        localFromStandard( standardFromSundial( tee, this.HINDU_LOCATION ), this.HINDU_LOCATION )
+        standardFromUniversal(
+          universalFromStandard(
+            standardFromSundial( tee, this.HINDU_LOCATION ),
+            this.HINDU_LOCATION,
+          ),
+          UJJAIN,
+        )
       )
     }
   }
@@ -408,7 +420,8 @@ const ModernHindu = class {
   astroHinduSunrise = date => {
     const rise = dawn( date, this.HINDU_LOCATION, angle( 0, 47, 0 ) )
     return universalFromStandard(
-      ( ( 1 / 60 ) / 24 ) * Math.round( rise * 24 * 60 ), this.HINDU_LOCATION,
+      ( ( 1 / 60 ) / 24 ) * Math.round( rise * 24 * 60 ),
+      this.HINDU_LOCATION,
     )
   }
 
