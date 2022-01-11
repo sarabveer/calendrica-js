@@ -51,7 +51,8 @@ const localFromStandard = ( teeRomS, location ) => (
 const ephemerisCorrection = tee => {
   const year = gregorianYearFromFixed( Math.floor( tee ) )
   const c = ( 1 / 36525 ) * gregorianDateDifference(
-    { year: 1900, month: 1, day: 1 }, { year, month: 7, day: 1 },
+    { year: 1900, month: 1, day: 1 },
+    { year, month: 7, day: 1 },
   )
   const y2000 = year - 2000
   const y1700 = year - 1700
@@ -274,8 +275,10 @@ const solarLongitude = tee => {
     -4.578, 26895.292, -39.127, 12297.536, 90073.778,
   ]
   const lambda = 282.7771834 + 36000.76953744 * c + 0.000005729577951308232
-    * sigma( [ coefficients, addends, multipliers ],
-      ( [ x, y, z ] ) => ( x * sinDegrees( y + z * c ) ) )
+    * sigma(
+      [ coefficients, addends, multipliers ],
+      ( [ x, y, z ] ) => ( x * sinDegrees( y + z * c ) ),
+    )
   return mod( ( lambda + aberration( tee ) + nutation( tee ) ), 360 )
 }
 
@@ -688,8 +691,10 @@ const approxMomentOfDepression = ( tee, location, alpha, isEarly ) => {
   const value = Math.abs( ttry ) > 1 ? sineOffset( alt, location, alpha ) : ttry
   const offset = mod3( ( arcsinDegrees( value ) / 360 ), hr( -12 ), hr( 12 ) )
   if ( Math.abs( value ) <= 1 ) {
-    return localFromApparent( ( date + ( isEarly ? hr( 6 ) - offset : hr( 18 ) + offset ) ),
-      location )
+    return localFromApparent(
+      ( date + ( isEarly ? hr( 6 ) - offset : hr( 18 ) + offset ) ),
+      location,
+    )
   }
   return null // Bogus
 }

@@ -108,11 +108,13 @@ const hinduTruePosition = ( tee, period, size, anomalistic, change ) => {
 
 // Solar longitude at moment tee.
 const hinduSolarLongitude = tee => (
-  hinduTruePosition( tee,
+  hinduTruePosition(
+    tee,
     HINDU_SIDEREAL_YEAR,
     14 / 360,
     HINDU_ANOMALISTIC_YEAR,
-    1 / 42 )
+    1 / 42,
+  )
 )
 
 // Zodiacal sign of the sun, as integer in range 1..12, at moment tee.
@@ -120,11 +122,13 @@ const hinduZodiac = tee => Math.floor( hinduSolarLongitude( tee ) / 30 ) + 1
 
 // Lunar longitude at moment tee.
 const hinduLunarLongitude = tee => (
-  hinduTruePosition( tee,
+  hinduTruePosition(
+    tee,
     HINDU_SIDEREAL_MONTH,
     32 / 360,
     HINDU_ANOMALISTIC_MONTH,
-    1 / 96 )
+    1 / 96,
+  )
 )
 
 // Longitudinal distance between the sun and moon at moment tee.
@@ -709,11 +713,13 @@ const ModernHindu = class {
     const lunar = astroHinduLunarDayAtOrAfter( tithi, approx - 2 )
     const ttry = Math.floor( lunar )
     const teeH = universalFromStandard(
-      standardFromSundial( ttry + tee, this.HINDU_LOCATION ), this.HINDU_LOCATION,
+      standardFromSundial( ttry + tee, this.HINDU_LOCATION ),
+      this.HINDU_LOCATION,
     )
     return ( lunar <= teeH || lunarPhase(
       universalFromStandard(
-        standardFromSundial( ttry + 1 + tee, this.HINDU_LOCATION ), this.HINDU_LOCATION,
+        standardFromSundial( ttry + 1 + tee, this.HINDU_LOCATION ),
+        this.HINDU_LOCATION,
       ),
     ) > 12 * tithi ) ? ttry : ttry + 1
   }
