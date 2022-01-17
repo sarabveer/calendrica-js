@@ -1,6 +1,6 @@
 {
   "name": "calendrica",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Javascript Implementation of Calendrical Calculations.",
   "main": "index.js",
   "scripts": {
