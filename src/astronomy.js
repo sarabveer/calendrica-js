@@ -328,6 +328,7 @@ const MEAN_SIDEREAL_YEAR = 365.25636
 
 // Type: Angle
 const SIDEREAL_START = precession( solarLongitudeAfter( 180, fixedFromJulian( 285, 9, 1 ) ) )
+  + nutation( solarLongitudeAfter( 180, fixedFromJulian( 285, 9, 1 ) ) )
 
 // Sidereal solar longitude at moment tee
 const siderealSolarLongitude = tee => (
