@@ -1,4 +1,4 @@
-const { fixedFromJulian } = require( './julian' )
+const { fixedFromGregorian } = require( './gregorian' )
 const {
   angle,
   arccosDegrees,
@@ -327,8 +327,8 @@ const precession = tee => {
 const MEAN_SIDEREAL_YEAR = 365.25636
 
 // Type: Angle
-const SIDEREAL_START = precession( solarLongitudeAfter( 180, fixedFromJulian( 285, 9, 1 ) ) )
-  + nutation( solarLongitudeAfter( 180, fixedFromJulian( 285, 9, 1 ) ) )
+const SIDEREAL_START = precession( fixedFromGregorian( 1956, 3, 21 ) )
+  + nutation( fixedFromGregorian( 1956, 3, 21 ) ) - angle( 23, 15, 0 )
 
 // Sidereal solar longitude at moment tee
 const siderealSolarLongitude = tee => (
