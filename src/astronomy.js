@@ -811,7 +811,7 @@ const sunset = ( date, location ) => {
 // as a small positive/negative angle in degrees, including
 // refraction and elevation.
 const observedLunarAltitude = ( tee, location ) => (
-  topocentricLunarAltitude( tee, location ) + refraction( tee, location ) + angle( 0, 16, 0 )
+  topocentricLunarAltitude( tee, location ) + refraction( location ) + angle( 0, 16, 0 )
 )
 
 // Standard time of moonset on fixed date at location.
