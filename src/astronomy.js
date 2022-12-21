@@ -4,6 +4,7 @@ const {
   arccosDegrees,
   arcsinDegrees,
   arctanDegrees,
+  binarySearch,
   cosDegrees,
   final,
   hr,
@@ -456,9 +457,9 @@ const lunarLongitude = tee => {
   const correction = ( 1 / 1000000 )
     * sigma( [
       argsSineCoeff, argsLunarElongation, argsSolarAnomaly, argsLunarAnomaly, argsMoonNode,
-    ], (
-      [ v, w, x, y, z ],
-    ) => ( v * ( E ** Math.abs( x ) ) * sinDegrees( w * D + x * M + y * MPrime + z * F ) ) )
+    ], ( [ v, w, x, y, z ] ) => (
+      v * ( E ** Math.abs( x ) ) * sinDegrees( w * D + x * M + y * MPrime + z * F )
+    ) )
   const venus = ( 3958 / 1000000 ) * sinDegrees( 119.75 + c * 131.849 )
   const jupiter = ( 318 / 1000000 ) * sinDegrees( 53.09 + c * 479264.29 )
   const flatEarth = ( 1962 / 1000000 ) * sinDegrees( Lprime - F )
@@ -521,10 +522,8 @@ const nthNewMoon = n => {
   const lunarCoeff = [ 1, 0, 2, 0, 1, 1, 0, 1, 1, 2, 3, 0, 0, 2, 1, 2, 0, 1, 2, 1, 1, 1, 3, 4 ]
   const moonCoeff = [ 0, 0, 0, 2, 0, 0, 0, -2, 2, 0, 0, 2, -2, 0, 0, -2, 0, -2, 2, 2, 2, -2, 0, 0 ]
   const correction = -0.00017 * sinDegrees( omega )
-    + sigma( [ sineCoeff, EFactor, solarCoeff, lunarCoeff, moonCoeff ], (
-      [ v, w, x, y, z ],
-    ) => (
-      ( v * ( E ** w ) * sinDegrees( x * solarAnomaly + y * lunarAnomaly + z * moonArgument ) )
+    + sigma( [ sineCoeff, EFactor, solarCoeff, lunarCoeff, moonCoeff ], ( [ v, w, x, y, z ] ) => (
+      v * ( E ** w ) * sinDegrees( x * solarAnomaly + y * lunarAnomaly + z * moonArgument )
     ) )
   const extra = 0.000325 * sinDegrees( poly( c, [ 299.77, 132.8475848, -0.009173 ] ) )
   const addConst = [
@@ -623,9 +622,9 @@ const lunarLatitude = tee => {
   const beta = ( 1 / 1000000 )
     * sigma( [
       argsSineCoeff, argsLunarElongation, argsSolarAnomaly, argsLunarAnomaly, argsMoonNode,
-    ], (
-      [ v, w, x, y, z ],
-    ) => ( v * ( E ** Math.abs( x ) ) * sinDegrees( w * D + x * M + y * MPrime + z * F ) ) )
+    ], ( [ v, w, x, y, z ] ) => (
+      v * ( E ** Math.abs( x ) ) * sinDegrees( w * D + x * M + y * MPrime + z * F )
+    ) )
   const venus = ( 175 / 1000000 ) * (
     sinDegrees( 119.75 + c * 131.849 + F ) + sinDegrees( 119.75 + c * 131.849 - F )
   )
@@ -654,6 +653,70 @@ const lunarAltitude = ( tee, location ) => {
   )
   return mod3( altitude, -180, 180 )
 }
+
+// Distance to moon (in meters) at moment tee.
+// Adapted from "Astronomical Algorithms" by Jean Meeus,
+// Willmann-Bell, 2nd edn., 1998, pp. 338-342.
+const lunarDistance = tee => {
+  const c = julianCenturies( tee )
+  const D = lunarElongation( c )
+  const M = solarAnomaly( c )
+  const MPrime = lunarAnomaly( c )
+  const F = moonNode( c )
+  const E = poly( c, [ 1, -0.002516, -0.0000074 ] )
+  const argsCosineCoeff = [
+    -20905355, -3699111, -2955968, -569925, 48888, -3149,
+    246158, -152138, -170733, -204586, -129620, 108743,
+    104755, 10321, 0, 79661, -34782, -23210, -21636, 24208,
+    30824, -8379, -16675, -12831, -10445, -11650, 14403,
+    -7003, 0, 10056, 6322, -9884, 5751, 0, -4950, 4130, 0,
+    -3958, 0, 3258, 2616, -1897, -2117, 2354, 0, 0, -1423,
+    -1117, -1571, -1739, 0, -4421, 0, 0, 0, 0, 1165, 0, 0, 8752,
+  ]
+  const argsLunarElongation = [
+    0, 2, 2, 0, 0, 0, 2, 2, 2, 2, 0, 1, 0, 2, 0, 0, 4, 0, 4, 2, 2, 1,
+    1, 2, 2, 4, 2, 0, 2, 2, 1, 2, 0, 0, 2, 2, 2, 4, 0, 3, 2, 4, 0, 2,
+    2, 2, 4, 0, 4, 1, 2, 0, 1, 3, 4, 2, 0, 1, 2, 2,
+  ]
+  const argsSolarAnomaly = [
+    0, 0, 0, 0, 1, 0, 0, -1, 0, -1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1,
+    0, 1, -1, 0, 0, 0, 1, 0, -1, 0, -2, 1, 2, -2, 0, 0, -1, 0, 0, 1,
+    -1, 2, 2, 1, -1, 0, 0, -1, 0, 1, 0, 1, 0, 0, -1, 2, 1, 0, 0,
+  ]
+  const argsLunarAnomaly = [
+    1, -1, 0, 2, 0, 0, -2, -1, 1, 0, -1, 0, 1, 0, 1, 1, -1, 3, -2,
+    -1, 0, -1, 0, 1, 2, 0, -3, -2, -1, -2, 1, 0, 2, 0, -1, 1, 0,
+    -1, 2, -1, 1, -2, -1, -1, -2, 0, 1, 4, 0, -2, 0, 2, 1, -2, -3,
+    2, 1, -1, 3, -1,
+  ]
+  const argsMoonNode = [
+    0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, -2, 2, -2, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -2, 2, 0, 2, 0, 0, 0, 0,
+    0, 0, -2, 0, 0, 0, 0, -2, -2, 0, 0, 0, 0, 0, 0, 0, -2,
+  ]
+  const correction = sigma( [
+    argsCosineCoeff, argsLunarElongation, argsSolarAnomaly, argsLunarAnomaly, argsMoonNode,
+  ], ( [ v, w, x, y, z ] ) => (
+    v * ( E ** Math.abs( x ) ) * cosDegrees( w * D + x * M + y * MPrime + z * F )
+  ) )
+  return 385000560 + correction
+}
+
+// Parallax of moon at tee at location.
+// Adapted from "Astronomical Algorithms" by Jean Meeus,
+// Willmann-Bell, 2nd edn., 1998.
+const lunarParallax = ( tee, location ) => {
+  const geo = lunarAltitude( tee, location )
+  const delta = lunarDistance( tee )
+  const alt = 6378140 / delta
+  return arcsinDegrees( alt * cosDegrees( geo ) )
+}
+
+// Topocentric altitude of moon at tee at location,
+// as a small positive/negative angle in degrees, ignoring refraction.
+const topocentricLunarAltitude = ( tee, location ) => (
+  lunarAltitude( tee, location ) - lunarParallax( tee, location )
+)
 
 // Moment UT of last new moon before tee.
 const newMoonBefore = tee => {
@@ -742,6 +805,61 @@ const sunrise = ( date, location ) => {
 const sunset = ( date, location ) => {
   const alpha = refraction( location ) + angle( 0, 16, 0 )
   return dusk( date, location, alpha )
+}
+
+// Observed altitude of upper limb of moon at tee at location,
+// as a small positive/negative angle in degrees, including
+// refraction and elevation.
+const observedLunarAltitude = ( tee, location ) => (
+  topocentricLunarAltitude( tee, location ) + refraction( tee, location ) + angle( 0, 16, 0 )
+)
+
+// Standard time of moonset on fixed date at location.
+// Returns bogus if there is no moonset on date.
+const moonrise = ( date, location ) => {
+  const tee = universalFromStandard( date, location )
+  const waning = lunarPhase( tee ) > 180
+  const alt = observedLunarAltitude( tee, location )
+  const offset = alt / ( 4 * ( 90 - Math.abs( location.latitude ) ) )
+  let approx
+  if ( waning && offset > 0 ) {
+    approx = tee + 1 - offset
+  } else if ( waning ) {
+    approx = tee - offset
+  } else {
+    approx = tee + ( 1 / 2 ) + offset
+  }
+  const rise = binarySearch(
+    approx - hr( 6 ),
+    approx + hr( 6 ),
+    ( l, u ) => u - l < hr( 1 / 60 ),
+    x => observedLunarAltitude( x, location ) > 0,
+  )
+  return rise < tee + 1 ? Math.max( standardFromUniversal( rise, location ), date ) : null
+}
+
+// Standard time of moonrise on fixed date at location.
+// Returns bogus if there is no moonrise on date.
+const moonset = ( date, location ) => {
+  const tee = universalFromStandard( date, location )
+  const waxing = lunarPhase( tee ) < 180
+  const alt = observedLunarAltitude( tee, location )
+  const offset = alt / ( 4 * ( 90 - Math.abs( location.latitude ) ) )
+  let approx
+  if ( waxing && offset > 0 ) {
+    approx = tee + offset
+  } else if ( waxing ) {
+    approx = tee + 1 + offset
+  } else {
+    approx = tee - offset + ( 1 / 2 )
+  }
+  const rise = binarySearch(
+    approx - hr( 6 ),
+    approx + hr( 6 ),
+    ( l, u ) => u - l < hr( 1 / 60 ),
+    x => observedLunarAltitude( x, location ) < 0,
+  )
+  return rise < tee + 1 ? Math.max( standardFromUniversal( rise, location ), date ) : null
 }
 
 // Length of daytime temporal hour on fixed date at location.
@@ -879,6 +997,9 @@ module.exports = {
   lunarPhaseAtOrAfter,
   lunarLatitude,
   lunarAltitude,
+  lunarDistance,
+  lunarParallax,
+  topocentricLunarAltitude,
   newMoonBefore,
   newMoonAtOrAfter,
   sineOffset,
@@ -889,6 +1010,9 @@ module.exports = {
   refraction,
   sunrise,
   sunset,
+  observedLunarAltitude,
+  moonrise,
+  moonset,
   daytimeTemporalHour,
   nighttimeTemporalHour,
   standardFromSundial,
