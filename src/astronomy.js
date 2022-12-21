@@ -853,13 +853,13 @@ const moonset = ( date, location ) => {
   } else {
     approx = tee - offset + ( 1 / 2 )
   }
-  const rise = binarySearch(
+  const set = binarySearch(
     approx - hr( 6 ),
     approx + hr( 6 ),
     ( l, u ) => u - l < hr( 1 / 60 ),
     x => observedLunarAltitude( x, location ) < 0,
   )
-  return rise < tee + 1 ? Math.max( standardFromUniversal( rise, location ), date ) : null
+  return set < tee + 1 ? Math.max( standardFromUniversal( set, location ), date ) : null
 }
 
 // Length of daytime temporal hour on fixed date at location.
